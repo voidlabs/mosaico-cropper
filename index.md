@@ -4,7 +4,7 @@ Mosaico Cropper is a cropper tool written on top of jQuery and the jQuery UI Wid
 
 ### Demo
 
-See the [demo](demo.html)
+See the [demo](cropdemo.html)
 
 ### Markdown
 
@@ -32,4 +32,4 @@ For more details see [GitHub Flavored Markdown](https://guides.github.com/featur
 
 ### Internal links
 
-[edit on GitHub](https://github.com/voidlabs/mosaico-cropper/edit/master/README.md)
+[edit on GitHub](https://github.com/voidlabs/mosaico-cropper/edit/master/index.md)
