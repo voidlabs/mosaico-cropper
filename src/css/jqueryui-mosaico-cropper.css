@@ -26,7 +26,9 @@
 }
 .mo-cropper {
     text-align: center;
-    position: relative
+    position: relative;
+    font-size: 16px;
+    line-height: 16px;
 }
 .mo-cropper .outer-image-container {
     position: absolute;
@@ -56,6 +58,7 @@
     position: relative;
     left: 0;
     top: 0;
+    max-width: none;
     pointer-events: none;
 }
 .mo-cropper .cropper-frame{
