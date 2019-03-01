@@ -1,0 +1,5 @@
+---
+layout: default
+title: Mosaico Cropper: a jQuery-UI based image crop widget
+---
+{% include demo.html%}
