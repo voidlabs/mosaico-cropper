@@ -57,8 +57,8 @@ function mosaicoCropper(imgEl, options, widget) {
     function getScaledImageSize(scale) {
         return {
             width: Math.round(originalImageSize.width * (scale || cropModel.scale)),
-            height: Math.round(originalImageSize.height * (scale || cropModel.scale)),
-        }
+            height: Math.round(originalImageSize.height * (scale || cropModel.scale))
+        };
     }
 
     function getCropHeight() {
@@ -304,7 +304,7 @@ function mosaicoCropper(imgEl, options, widget) {
     }
 
     function _fromScaleToSliderValue(scale) {
-        return Math.log(scale * 100) / Math.log(1.03);;
+        return Math.log(scale * 100) / Math.log(1.03);
     }
 
     function initializeSlider() {
@@ -399,7 +399,7 @@ function mosaicoCropper(imgEl, options, widget) {
 
     function changed() { // n
         rootEl.addClass("cropper-has-changes");
-    };
+    }
 
     function generateCurrentUrl() {
         var scaledSize = getScaledImageSize();
@@ -545,7 +545,7 @@ function mosaicoCropper(imgEl, options, widget) {
         getCropHeight: getCropHeight,
         updateCropHeight: updateCropHeight,
         dispose: dispose,
-    }
+    };
 
 }
 
