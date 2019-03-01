@@ -200,12 +200,13 @@ $(function() {
     
     // Proxy only
     var thumborURLAdapter = {
-        defaultPrefix: 'http://thumbor.thumborize.me/unsafe/',
+        // use i2.wp.com as an https to http proxy, so this page works on HTTPS without alters
+        defaultPrefix: 'https://i2.wp.com/thumbor.thumborize.me/unsafe/',
         // http://thumbor.thumborize.me/unsafe/300x/http://thumborize.me/static/img/beach.jpg
         // http://thumbor.thumborize.me/unsafe/300x100/http://thumborize.me/static/img/beach.jpg
         // http://thumbor.thumborize.me/unsafe/500x400:800x600/300x200/https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg
         fromSrc: function(src) {
-            return urlParser("{urlPrefix:https?://[^/]*/unsafe/}({cropX}x{cropY}:{cropX2}x{cropY2}/)?({width}x({height})?/)?{urlOriginal:.*}", src);
+            return urlParser("{urlPrefix:https?://.*?/unsafe/}({cropX}x{cropY}:{cropX2}x{cropY2}/)?({width}x({height})?/)?{urlOriginal:.*}", src);
         },
         toSrc: function(p) {
             return stringTemplate("{urlPrefix}{cropX}x{cropY}:{cropX2}x{cropY2}/{width}x{height}/{urlOriginal}", p);
@@ -363,9 +364,9 @@ $(function() {
 <img class="croppable-image weservenl" src="https://images.weserv.nl/?w=455&h=559&t=fitup&crop=300,300,19,0&url=ory.weserv.nl%2Flichtenstein.jpg">
 
 <h1>thumbor(thumborize)</h1>
-<img class="croppable-image thumbor" src="http://thumbor.thumborize.me/unsafe/300x/http://thumborize.me/static/img/beach.jpg">
-<img class="croppable-image thumbor" src="http://thumbor.thumborize.me/unsafe/300x100/http://thumborize.me/static/img/beach.jpg">
-<img class="croppable-image thumbor" src="http://thumbor.thumborize.me/unsafe/170x335:609x628/300x200/https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg">
+<img class="croppable-image thumbor" src="https://i2.wp.com/thumbor.thumborize.me/unsafe/300x/http://thumborize.me/static/img/beach.jpg">
+<img class="croppable-image thumbor" src="https://i2.wp.com/thumbor.thumborize.me/unsafe/300x100/http://thumborize.me/static/img/beach.jpg">
+<img class="croppable-image thumbor" src="https://i2.wp.com/thumbor.thumborize.me/unsafe/170x335:609x628/300x200/https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg">
 
 <h1>wnimageproxy(willnorris)</h1>
 <img class="croppable-image wnimageproxy" src="https://willnorris.com/api/imageproxy/300x/https://willnorris.com/2013/12/small-things.jpg">
