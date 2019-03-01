@@ -1,0 +1,32 @@
+{
+  "name": "mosaico-cropper",
+  "version": "0.9.0",
+  "title": "Mosaico Cropper",
+  "description": "Mosaico Cropper is a cropper tool written on top of jQuery and the jQuery UI Widget Factory providing easy inline resize/crop/pan for images",
+  "keywords": [
+    "jquery",
+    "ui",
+    "widget",
+    "crop",
+    "resize",
+    "image",
+    "mosaico"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:voidlabs/mosaico-cropper.git"
+  },
+  "author": "Stefano Bagnara",
+  "license": "MIT",
+  "licenseurl": "http://www.opensource.org/licenses/mit-license.php",
+  "homepage": "https://github.com/voidlabs/mosaico-cropper",
+  "bugs": "https://github.com/voidlabs/mosaico-cropper/issues",
+  "dependencies": {
+    "jquery": "^3.3.1",
+    "jquery-ui-package": "1.11.4",
+    "jquery-ui-touch-punch": "^0.2.3"
+  },
+  "devDependencies": {
+    "grunt": "^1.0.3"
+  }
+}

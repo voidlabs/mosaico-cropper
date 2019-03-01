@@ -1,0 +1,234 @@
+.mo-cropper img {
+    -ms-user-select: none;
+    -webkit-user-select: none;
+}
+.mo-cropper .clipped-image, .mo-cropper .outer-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+@-webkit-keyframes cropper-opacity-animation {
+    from { opacity: 0 } to { opacity: .3 }
+}
+@keyframes cropper-opacity-animation {
+    from { opacity: 0 } to { opacity: .3 }
+}
+
+/* 
+.cropper-cropping {
+    overflow-y: scroll !important;
+}
+ */
+
+.cropper-hidden{
+    display: none;
+}
+.mo-cropper {
+    text-align: center;
+    position: relative
+}
+.mo-cropper .outer-image-container {
+    position: absolute;
+    opacity: .3;
+    left: 0;
+    top: 0;
+    cursor: move;
+    /*
+    width: 100%;
+    height: 100%;
+    */
+}
+
+.mo-cropper.cropper-loading .outer-image-container {
+    display: none;
+}
+
+.mo-cropper:not(.cropper-hidden) .outer-image-container { 
+    -webkit-animation: cropper-opacity-animation .2s ease-in;
+    animation: cropper-opacity-animation .2s ease-in
+}
+.mo-cropper img {
+    -moz-user-select: none;
+    user-select: none;
+}
+.mo-cropper .clipped {
+    position: relative;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+}
+.mo-cropper .cropper-frame{
+    box-sizing: border-box;
+    position: initial !important; /* jquery resizable make this relative and breaks the resizing handle visualization */
+    cursor: move;
+    z-index: 300;
+    left: 0;
+    top: 0;
+    pointer-events: none; /* */ /* with none the handle is not resizable, without none IE11 doesn't work at all */
+    /* outline: 1px solid #ff5722; */
+}
+.mo-cropper .clipping-container {
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+}
+.mo-cropper .clip-handle {
+    position:absolute;
+    pointer-events: all; /* override the cropper-frame pointer-events */
+    top:100%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    z-index:310;
+    cursor:row-resize;
+    margin-top:-10px;
+}
+.mo-cropper .clip-handle:before {
+    content: "";
+    position: absolute;
+    display: block;
+    top: 10px;
+    background-color: #ff5722;
+    box-shadow: 1px 1px 3px #727272;
+    left: -15px;
+    width: 30px;
+    height: 17px;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+}
+
+.mo-cropper .clip-handle:after {
+    content: "\f103";
+    position: absolute;
+    display: block;
+    font-family: FontAwesome;
+    color: #eee;
+    top: 9px;
+    left: -15px;
+    width: 30px;
+    height: auto;
+    border: none;
+}
+
+.mo-cropper .clip-handle:hover:before {
+    height: 19px;
+}
+.mo-cropper .clip-handle:hover:after {
+    top: 11px;
+}
+
+.mo-cropper .clip-handle {
+    transition-property: z-index, margin-top;
+    transition-duration: 200ms, 200ms;
+    transition-delay: 200ms, 200ms;
+}
+
+.cropper-moving:not(.cropper-moving-handle).mo-cropper .clip-handle, .cropper-loading.mo-cropper .clip-handle {
+    z-index: -10000;
+    margin-top: -30px;
+}
+
+.mo-cropper .clip-handle:hover:after{
+    border-color: white;
+}
+
+.cropper-moving:not(.cropper-moving-slide):not(.cropper-moving-wheel).mo-cropper .ui-slider {
+    pointer-events: none;
+    opacity: 0;
+    bottom: 0;
+}
+
+.mo-cropper .ui-slider {
+    transition-property: opacity, bottom;
+    transition-duration: 200ms, 200ms;
+    transition-delay: 200ms, 200ms;
+
+    z-index: 1000;
+    bottom: 20px;
+    position: absolute;
+    left: 20px;
+    width: calc(100% - 40px);
+    height: 4px;
+    background-color: white;
+    box-shadow: inset 1px 1px 3px grey;
+    border: none;
+
+    /* accomodate tool button */
+    left: 15px;
+    width: calc(100% - 40px - 30px);
+}
+
+/* default styles from jquery skin, we declare them again as we don't need the jquery ui css */
+.mo-cropper .ui-slider .ui-slider-handle {
+    position: absolute;
+    width: 20px;
+    margin-left: -10px;
+    height: 20px;
+}
+
+.mo-cropper .ui-slider .ui-slider-handle {
+    top: -.5em;
+    background-color: #ff5722 !important;
+    box-shadow: 1px 1px 3px #727272;
+    background-image: none;
+    border: none;
+    border-radius: 100%;
+    cursor: ew-resize;
+}
+
+.mo-cropper .ui-slider .ui-slider-handle:focus {
+    outline: 0 none;
+}
+
+.mo-cropper:not(.cropper-has-changes) .tool-crop .fa:before {
+    /* close / fa-times */
+    content: "\f00d";
+}
+
+.cropper-loading .tool-crop .fa:before {
+  /* loading, important to override the icon change depending on state */
+  content: "\f110" !important;
+}
+
+.mo-cropper .tool-crop {
+    transition-property: opacity, bottom;
+    transition-duration: 200ms, 200ms;
+    transition-delay: 200ms, 200ms;
+    /* content: "\f125"; */
+    /* content: "\f00c"; */
+    /*
+    font-family: FontAwesome;
+    */
+    color: #eee;
+
+    cursor: pointer;
+
+    background-color: #ff5722 !important;
+    box-shadow: 1px 1px 3px #727272;
+    background-image: none;
+    border: none;
+    border-radius: 100%;
+
+
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    z-index: 400;
+
+    padding: 6px;
+    box-sizing: border-box;
+}
+
+.cropper-loading .tool-crop .fa {
+  -webkit-animation: fa-spin 2s infinite linear;
+  animation: fa-spin 2s infinite linear;
+}
+
+.cropper-moving:not(.cropper-moving-slide):not(.cropper-moving-wheel).mo-cropper .tool-crop {
+    pointer-events: none;
+    opacity: 0;
+    bottom: 0;
+}
