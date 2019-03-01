@@ -2,4 +2,391 @@
 layout: default
 title: Mosaico Cropper - a jQuery-UI based image crop widget
 ---
-{% include_relative demo.html %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+
+<link rel="stylesheet" href="src/css/jqueryui-mosaico-cropper.css" />
+<script src="src/js/jqueryui-mosaico-cropper.js"></script>
+
+<style>
+.croppable-image:hover {
+    outline: 2px solid #ff5722;
+}
+
+@-webkit-keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+img.my-cropper-loading {
+    animation: pulse 1s infinite ease-in-out;
+}
+</style>
+
+
+<script>
+
+$(function() {
+
+    // pattern is a pseudo regex where {tokens} are replaced with "[0-9]+" and  {tokens:regex} are replaced with "regex"
+    // the matcher remember the tokens names and returns a matching object using named matches, like named capture groups 
+    // (named capture groups have been implemented only by ES2018, so we can't use them)
+    function urlParser(pattern, url) {
+        var matchNames = [];
+        var regex = new RegExp('^'+pattern.replace(/\\.|(\((?!\?[!:=]))|\{([^:\}]+)(?::([^\}]+))?\}/g, function(match, braket, groupName, subPattern, offset, input_string) {
+            // console.log("X", match, braket, groupName, subPattern, offset, input_string);
+            if (braket) {
+                // existing regex match
+                matchNames.push('');
+                return match;
+            } else if (groupName) {
+                // named group
+                matchNames.push(groupName);
+                if (subPattern) {
+                    // deal with sub patterns matching groups
+                    subPattern.replace(/\\.|(\((?!\?[!:=]))/g, function(innerMatch, innerBraket) {
+                        if (innerBraket) matchNames.push('');
+                        return match;
+                    });
+                    return '('+subPattern+')';
+                } else return '([0-9]+)';
+            } else {
+                // escaped char
+                return match;
+            }
+        })+'$');
+
+        var res = url.match(regex);
+
+        var matches = null;
+        if (res !== null) {
+            if (res.length !== matchNames.length + 1) {
+                // TODO improve error reporting
+                console.log("ERROR parsing pattern!", pattern, matchNames, res);
+            }
+            matches = {};
+            for (var i = 0; i < matchNames.length; i++) {
+                if (matchNames[i] !== '' && res[i+1] !== undefined) {
+                    matches[matchNames[i]] = res[i+1];
+                }
+            }
+        }
+        // console.log("p", matches, pattern, url, matchNames, regex);
+        return matches;
+    }
+
+    function stringTemplate(string, obj) {
+        return string.replace(/\{([^[\}]+)\}/g, function(match, contents, offset, input_string) {
+            if (obj.hasOwnProperty(contents)) {
+                return obj[contents];
+            } else {
+                return match;
+            }
+        });
+    }
+
+    var cloudinaryURLAdapter = {
+        fromSrc: function(src) {
+            return urlParser("{urlPrefix:.*/upload}(/x_{cropX},y_{cropY},w_{cropWidth},h_{cropHeight},c_crop/w_{width},h_{height},c_scale|/w_{resizeWidth},h_{resizeHeight},c_scale/x_{offsetX},y_{offsetY},w_{width},h_{height},c_crop|/w_{width}(,h_{height},c_fill)?)?{urlPostfix:/[^/]*}", src);
+        },
+        toSrc: function(p) {
+            if (p.cropThenResize)
+                return stringTemplate("{urlPrefix}/x_{cropX},y_{cropY},w_{cropWidth},h_{cropHeight},c_crop/w_{width},h_{height},c_scale{urlPostfix}", p);
+            else
+                return stringTemplate("{urlPrefix}/w_{resizeWidth},h_{resizeHeight},c_scale/x_{offsetX},y_{offsetY},w_{width},h_{height},c_crop{urlPostfix}", p);
+        }
+    };
+
+    // direct upload to S3, via signed urls: https://blog.imagekit.io/imagekit-io-and-dropzone-js-client-side-drag-and-drop-image-upload-from-imagekit-io-user-fca3049c60fb
+    var imagekitURLAdapter = {
+        fromSrc: function(src) {
+            return urlParser("{urlPrefix:https?://[^/]*/[^/]*}/tr:(w-{resizeWidth},h-{resizeHeight}:w-{width},h-{height},cm-extract,x-{offsetX},y-{offsetY}(,fo-top_left)?|(w-{cropWidth},h-{cropHeight},cm-extract,x-{cropX},y-{cropY}(,fo-top_left)?:)?w-{width}(,h-{height})?){urlPostfix:/.*}", src);
+        },
+        toSrc: function(p) {
+            if (p.cropThenResize)
+                return stringTemplate("{urlPrefix}/tr:w-{resizeWidth},h-{resizeHeight}:w-{width},h-{height},cm-extract,x-{offsetX},y-{offsetY},fo-top_left{urlPostfix}", p);
+            else
+                return stringTemplate("{urlPrefix}/tr:w-{cropWidth},h-{cropHeight},cm-extract,x-{cropX},y-{cropY},fo-top_left:w-{width},h-{height}{urlPostfix}", p);
+        }
+    };
+
+    // proxy only via custom sources, or S3
+    var gumletURLAdapter = {
+        defaultPrefix: 'https://moimagecropper-demo.gumlet.com/p/',
+        fromSrc: function(src) {
+            return urlParser("{urlPrefix:[^\\?]*}{urlOriginal:http[^\\?]*}?\\?(width={width}|(extract={cropX},{cropY},{cropWidth},{cropHeight}&)?mode=crop&width={width}&height={height})", src);
+        },
+        toSrc: function(p) {
+            if (p.urlOriginal == undefined) p.urlOriginal = '';
+            return stringTemplate("{urlPrefix}{urlOriginal}?extract={cropX},{cropY},{cropWidth},{cropHeight}&mode=crop&width={width}&height={height}", p);
+        }
+    };
+    
+    // File upload via S3 like presigned urls https://sirv.com/help/resources/presigned-urls/ 
+    var sirvURLAdapter = {
+        fromSrc: function(src) {
+            return urlParser("{urlPrefix:[^\\?]*}\\?(w={width}(&h={height}&scale.option=fill&cw={width}&ch={height}&cx=center&cy=center)?|w={resizeWidth}(&h={resizeHeight})?&cx={offsetX}&cy={offsetY}&cw={width}&ch={height})", src);
+        },
+        toSrc: function(p) {
+            return stringTemplate("{urlPrefix}?w={resizeWidth}&cx={offsetX}&cy={offsetY}&cw={width}&ch={height}", p);
+        }
+    };
+
+    // File upload via https://github.com/uploadcare/uploadcare-upload-client
+    var uploadcareURLAdapter = {
+        fromSrc: function(src) {
+            return urlParser("{urlPrefix:((?!/-/).)*/}(-/resize/{width}x/|-/resize/{resizeWidth}x/-/crop/{width}x{height}/{offsetX},{offsetY}/|-/scale_crop/{width}x{height}/)", src);
+        },
+        toSrc: function(p) {
+            return stringTemplate("{urlPrefix}-/resize/{resizeWidth}x/-/crop/{width}x{height}/{offsetX},{offsetY}/", p);
+        }
+    };
+
+    // cloudimage supports also external images
+    var cloudimageURLAdapter = {
+        defaultPrefix: 'https://demo.cloudimg.io/',
+        fromSrc: function(src) {
+            // https://demo.cloudimg.io/width/600/n/https://jolipage.airstore.io/img.jpg
+            // https://demo.cloudimg.io/crop/600x337/n/https://jolipage.airstore.io/img.jpg
+            // https://demo.cloudimg.io/crop_px/1500,400,2000,1300-200x300/n/sample.li/girls.jpg
+            return urlParser("{urlPrefix:https?://[^/]*/}(crop_px/{cropX},{cropY},{cropX2},{cropY2}-{width}x{height}|crop/{width}x{height}|width/{width})/n/{urlOriginal:.*}", src);
+        },
+        toSrc: function(p) {
+            return stringTemplate("{urlPrefix}crop_px/{cropX},{cropY},{cropX2},{cropY2}-{width}x{height}/n/{urlOriginal}", p);
+        }
+    };
+
+    // Proxy only
+    var weservenlURLAdapter = {
+        defaultPrefix: 'https://images.weserv.nl/',
+        fromSrc: function(src) {
+            // https://images.weserv.nl/?w=300&h=100&t=square&url=ory.weserv.nl/lichtenstein.jpg
+            // https://images.weserv.nl/?w=399&h=399&crop=300,300,43,63&url=https%3A%2F%2Fimages.weserv.nl%2F%3Fw%3D500%26h%3D615%26crop%3D300%2C300%2C100%2C100%26url%3Dory.weserv.nl%252Flichtenstein.jpg
+            // https://images.weserv.nl/?w=500&h=615&t=fitup&crop=300,300,38,9&url=ory.weserv.nl%2Flichtenstein.jpg
+            // https://images.weserv.nl/?w=300&h=100&t=square&url=ory.weserv.nl/lichtenstein.jpg
+            var res = urlParser("{urlPrefix:https?://[^/]*/}\\?(w={width}&h={height}&t=square&|w={resizeWidth}&h={resizeHeight}&t=fitup&crop={width},{height},{offsetX},{offsetY}&)?url={urlPostfix:.*}", src);
+            if (res) res.urlOriginal = decodeURIComponent(res.urlPostfix);
+            return res;
+        },
+        toSrc: function(p) {
+            p.encodedUrlOriginal = encodeURIComponent(p.urlOriginal);
+            return stringTemplate("{urlPrefix}?w={resizeWidth}&h={resizeHeight}&t=fitup&crop={width},{height},{offsetX},{offsetY}&url={encodedUrlOriginal}", p);
+        }
+    };
+
+
+    // Filestack can also resize URLs, but you need an API key and to sign requests
+    // Filestack direct upload: https://github.com/filestack/filestack-js
+    var filestackURLAdapter = {
+        fromSrc: function(src) {
+            // https://cdn.filestackcontent.com/resize=w:300/v8x4EUOKRS6OowxpkY8i
+            // https://cdn.filestackcontent.com/resize=w:300,h:100,fit:crop/hOv6CUMRTErojO1feJUA
+            // https://cdn.filestackcontent.com/crop=d:[600,200,300,300]/resize=w:200,h:200,fit:crop/hOv6CUMRTErojO1feJUA
+            // https://cdn.filestackcontent.com/crop=d:[0,1270,3024,1482]/resize=w:300,h:147,fit:crop/v8x4EUOKRS6OowxpkY8i
+            return urlParser("{urlPrefix:https?://[^/]*/}((crop=d:\\[{cropX},{cropY},{cropWidth},{cropHeight}\\]/)?resize=w:{width}(,h:{height},fit:crop)?/)?{urlPostfix:[^/]*}", src);
+        },
+        toSrc: function(p) {
+            return stringTemplate("{urlPrefix}crop=d:[{cropX},{cropY},{cropWidth},{cropHeight}]/resize=w:{width},h:{height},fit:crop/{urlPostfix}", p);
+        }
+    };
+    
+    // Proxy only
+    var thumborURLAdapter = {
+        // use i2.wp.com as an https to http proxy, so this page works on HTTPS without alters
+        defaultPrefix: 'https://i2.wp.com/thumbor.thumborize.me/unsafe/',
+        // http://thumbor.thumborize.me/unsafe/300x/http://thumborize.me/static/img/beach.jpg
+        // http://thumbor.thumborize.me/unsafe/300x100/http://thumborize.me/static/img/beach.jpg
+        // http://thumbor.thumborize.me/unsafe/500x400:800x600/300x200/https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg
+        fromSrc: function(src) {
+            return urlParser("{urlPrefix:https?://.*?/unsafe/}({cropX}x{cropY}:{cropX2}x{cropY2}/)?({width}x({height})?/)?{urlOriginal:.*}", src);
+        },
+        toSrc: function(p) {
+            return stringTemplate("{urlPrefix}{cropX}x{cropY}:{cropX2}x{cropY2}/{width}x{height}/{urlOriginal}", p);
+        }
+    };
+
+    // Proxy only, opensource
+    var wnimageproxyURLAdapter = {
+        defaultPrefix: 'https://willnorris.com/api/imageproxy/',
+        // https://willnorris.com/api/imageproxy/300x/https://willnorris.com/2015/05/material-animations.gif
+        // https://willnorris.com/api/imageproxy/300x100/https://willnorris.com/2013/12/small-things.jpg
+        // https://willnorris.com/api/imageproxy/cy300,cw500,ch400,300x/https://willnorris.com/2006/02/los-angeles-skyline.jpg
+        fromSrc: function(src) {
+            return urlParser("{urlPrefix:https?://.*/imageproxy/}(((cx{cropX},)?(cy{cropY},)?cw{cropWidth},ch{cropHeight},)?{width}x({height})?/){urlOriginal:.*}", src);
+        },
+        toSrc: function(p) {
+            return stringTemplate("{urlPrefix}cx{cropX},cy{cropY},cw{cropWidth},ch{cropHeight},{width}x{height}/{urlOriginal}", p);
+        }
+    };
+
+    // Proxy only, opensource
+    var imaginaryURLAdapter = {
+        defaultPrefix: 'https://static.pimmr.me/',
+        // https://static.pimmr.me/resize?width=300&nocrop=true&url=https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/33-1.jpeg
+        // https://static.pimmr.me/resize?width=400&height=300&url=https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/33-1.jpeg
+        // https://static.pimmr.me/extract?width=400&height=400&top=100&left=50&areawidth=300&areaheight=200&url=https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/33-1.jpeg
+        // https://static.pimmr.me/extract?width=483&height=322&left=173&top=84&areawidth=300&areaheight=200&url=https%3A%2F%2Fs3.eu-central-1. amazonaws.com%2Fsasapost%2Fwp-content%2Fuploads%2FGettyImages-74439287.jpg
+        fromSrc: function(src) {
+            var res = urlParser("{urlPrefix:https?://[^/]*/}(resize\\?width={width}&nocrop=true|resize\\?width={width}&height={height}|extract\\?width={resizeWidth}&height={resizeHeight}&left={offsetX}&top={offsetY}&areawidth={width}&areaheight={height})&url={urlPostfix:.*}", src);
+            if (res) res.urlOriginal = decodeURIComponent(res.urlPostfix);
+            return res;
+        },
+        toSrc: function(p) {
+            p.encodedUrlOriginal = encodeURIComponent(p.urlOriginal);
+            return stringTemplate("{urlPrefix}extract\?width={resizeWidth}&height={resizeHeight}&left={offsetX}&top={offsetY}&areawidth={width}&areaheight={height}&url={encodedUrlOriginal}", p);
+        }
+    };
+
+
+    function automaticURLAdapter(el) {
+        var urlAdapter = cloudinaryURLAdapter;
+        if (el.classList.contains("sirv")) urlAdapter = sirvURLAdapter;
+        if (el.classList.contains("imagekit")) urlAdapter = imagekitURLAdapter;
+        if (el.classList.contains("cloudimage")) urlAdapter = cloudimageURLAdapter;
+        if (el.classList.contains("gumlet")) urlAdapter = gumletURLAdapter;
+        if (el.classList.contains("uploadcare")) urlAdapter = uploadcareURLAdapter;
+        if (el.classList.contains("thumbor")) urlAdapter = thumborURLAdapter;
+        if (el.classList.contains("filestack")) urlAdapter = filestackURLAdapter;
+        if (el.classList.contains("weservenl")) urlAdapter = weservenlURLAdapter;
+        if (el.classList.contains("wnimageproxy")) urlAdapter = wnimageproxyURLAdapter;
+        if (el.classList.contains("imaginary")) urlAdapter = imaginaryURLAdapter;
+        return urlAdapter;
+    }
+
+    // quando clicco si inizializza
+    $('.croppable-image').on("click", function(e) {
+        $(e.target).mosaicoCropper({
+            imgLoadingClass: "my-cropper-loading",
+            /* urlPrefix: urlprefix */
+            /* urlPostfix: urlpostfix */
+            autoClose: !e.shiftKey,
+            autoZoom: !e.shiftKey,
+            shiftWheel: e.shiftKey,
+            containerSelector: 'body',
+            urlAdapter: automaticURLAdapter(e.target)
+        });
+    });
+
+    $('.cropthemall').on("click", function(e) {
+        $('.croppable-image').each(function(index, el) {
+            $(el).mosaicoCropper({
+                imgLoadingClass: "my-cropper-loading",
+                autoClose: false,
+                autoZoom: false,
+                shiftWheel: true,
+                containerSelector: 'body',
+                urlAdapter: automaticURLAdapter(el)
+            });
+        });
+    });
+
+    $('.closethemall').on("click", function(e) {
+        $('.croppable-image.my-cropper-loading').mosaicoCropper("destroy");
+    });
+
+});
+
+</script>
+<h1>jQuery Mosaico Cropper Demo</h1>
+
+<div>
+
+<p>This demo works against multiple cloud image resizing demo services</p>
+<p>Mosaico Cropper automatically detect already existing crop/resize transformations in the src image and find out the original image and the applied transformations.</p>
+<p>When cropping is closed, Mosaico Cropper removes itself and updates the original image src url with the new one.</p>
+
+<table border="0" cellpadding="5"><tr>
+    <td valign="top"><img class="croppable-image cloudinary" src="https://res.cloudinary.com/demo/image/upload/w_166,h_90,c_fill/balloons.jpg"></td>
+    <td valign="top"><img class="croppable-image cloudinary" src="https://res.cloudinary.com/demo/image/upload/w_330,h_213,c_scale/x_39,y_15,w_166,h_90,c_crop/sofa_cat.jpg"></td>
+    <td valign="top"><img class="croppable-image cloudinary" src="https://res.cloudinary.com/demo/image/upload/w_440,h_303,c_scale/x_65,y_66,w_166,h_90,c_crop/woman.jpg"></td>
+    <td valign="top"><img class="croppable-image cloudinary" src="https://res.cloudinary.com/idemo/image/upload/w_578,h_385,c_scale/x_200,y_100,w_166,h_92,c_crop/friends.jpg" width="166"></td>
+</tr></table>
+
+<p>Click on the image to start cropping using <code>autoClose</code> on focus out and <code>autoZoom</code> on resize</p>
+<p>Shift-Click in the image to start cropping with NO <code>autoClose</code> and NO <code>autoZoom</code> and to enable <code>shiftWheel</code> (mousewheel only works when pressing shift)</p>
+
+<h1>imagekit</h1>
+
+<img class="croppable-image imagekit" src="https://ik.imagekit.io/demo/tr:w-472,h-638:w-200,h-310,cm-extract,x-127,y-256/img/plant.jpeg">
+<img class="croppable-image imagekit" src="https://ik.imagekit.io/demo/tr:w-200/medium_cafe_B1iTdD0C.jpg">
+
+<h1>cloudimage</h1>
+
+<img class="croppable-image cloudimage" src="https://demo.cloudimg.io/crop_px/2009,28,2500,316-300x176/n/sample.li/girls.jpg">
+<img class="croppable-image cloudimage" src="https://demo.cloudimg.io/crop/300x100/n/https://jolipage.airstore.io/img.jpg">
+<img class="croppable-image cloudimage" src="https://demo.cloudimg.io/width/300/n/https://jolipage.airstore.io/img.jpg">
+
+<h1>gumlet</h1>
+
+<img class="croppable-image gumlet" src="https://demo.gumlet.com/black-leaf.jpeg?width=200">
+<img class="croppable-image gumlet" src="https://demo.gumlet.com/black-leaf.jpeg?mode=crop&width=300&height=100">
+<img class="croppable-image gumlet" src="https://demo.gumlet.com/black-leaf.jpeg?extract=100,0,600,200&mode=crop&width=300&height=100">
+
+<h1>sirv</h1>
+
+<img class="croppable-image sirv" src="https://demo.sirv.com/bag.jpg?w=300">
+<img class="croppable-image sirv" src="https://sirv-cdn.sirv.com/website/demos/Nikon_D750_24_120_front34l.jpg?w=300&h=200&scale.option=fill&cw=300&ch=200&cx=center&cy=center">
+<img class="croppable-image sirv" src="https://sirv-cdn.sirv.com/website/demos/Nikon_D750_24_85_back34r.jpg?w=643&cx=303&cy=211&cw=300&ch=245">
+
+<h1>cloudinary</h1>
+
+<img class="croppable-image cloudinary" src="https://res.cloudinary.com/demo/image/upload/balloons.jpg" width="400">
+<img class="croppable-image cloudinary" src="https://res.cloudinary.com/demo/image/upload/w_200/balloons.jpg">
+<img class="croppable-image cloudinary" src="https://res.cloudinary.com/demo/image/upload/w_924,h_616,c_scale/x_22,y_183,w_200,h_285,c_crop/balloons.jpg">
+
+<h1>uploadcare</h1>
+
+<img class="croppable-image uploadcare" src="https://ucarecdn.com/c4b32a69-f817-48be-b918-7eb6718f7aca/-/resize/300x/">
+<img class="croppable-image uploadcare" src="https://ucarecdn.com/c4b32a69-f817-48be-b918-7eb6718f7aca/-/scale_crop/300x100/">
+<img class="croppable-image uploadcare" src="https://ucarecdn.com/c4b32a69-f817-48be-b918-7eb6718f7aca/-/resize/1210x/-/crop/300x200/737,202/">
+
+<h1>filestack</h1>
+
+<img class="croppable-image filestack" src="https://cdn.filestackcontent.com/resize=w:300/hOv6CUMRTErojO1feJUA">
+<img class="croppable-image filestack" src="https://cdn.filestackcontent.com/resize=w:300,h:200,fit:crop/v8x4EUOKRS6OowxpkY8i">
+<img class="croppable-image filestack" src="https://cdn.filestackcontent.com/crop=d:[600,200,300,300]/resize=w:200,h:200,fit:crop/hOv6CUMRTErojO1feJUA">
+
+<h1>weserve.nl</h1>
+
+<img class="croppable-image weservenl" src="https://images.weserv.nl/?url=ory.weserv.nl/zebra.jpg" width="300">
+<img class="croppable-image weservenl" src="https://images.weserv.nl/?w=300&h=100&t=square&url=ory.weserv.nl/lichtenstein.jpg">
+<img class="croppable-image weservenl" src="https://images.weserv.nl/?w=455&h=559&t=fitup&crop=300,300,19,0&url=ory.weserv.nl%2Flichtenstein.jpg">
+
+<h1>thumbor(thumborize)</h1>
+<img class="croppable-image thumbor" src="https://i2.wp.com/thumbor.thumborize.me/unsafe/300x/http://thumborize.me/static/img/beach.jpg">
+<img class="croppable-image thumbor" src="https://i2.wp.com/thumbor.thumborize.me/unsafe/300x100/http://thumborize.me/static/img/beach.jpg">
+<img class="croppable-image thumbor" src="https://i2.wp.com/thumbor.thumborize.me/unsafe/170x335:609x628/300x200/https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg">
+
+<h1>wnimageproxy(willnorris)</h1>
+<img class="croppable-image wnimageproxy" src="https://willnorris.com/api/imageproxy/300x/https://willnorris.com/2013/12/small-things.jpg">
+<img class="croppable-image wnimageproxy" src="https://willnorris.com/api/imageproxy/300x200/https://willnorris.com/2015/05/material-animations.gif">
+<img class="croppable-image wnimageproxy" src="https://willnorris.com/api/imageproxy/cx780,cy383,cw500,ch300,300x180/https://willnorris.com/2006/02/los-angeles-skyline.jpg">
+
+<h1>imaginary(pimmr)</h1>
+<img class="croppable-image imaginary" src="https://static.pimmr.me/resize?width=300&nocrop=true&url=https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/33-1.jpeg">
+<img class="croppable-image imaginary" src="https://static.pimmr.me/resize?width=300&height=100&url=https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/GettyImages-74439287.jpg">
+<img class="croppable-image imaginary" src="https://static.pimmr.me/extract?width=1255&height=706&left=924&top=506&areawidth=300&areaheight=200&url=https%3A%2F%2Fs3.eu-central-1.amazonaws.com%2Fsasapost-media%2Fwp-content%2Fuploads%2F20180630140808%2F31785956755_fdd21edec0_o.jpg">
+
+<h1>demo open proxies cloudimage/thumbor/weserve</h1>
+<img class="croppable-image cloudimage" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
+<img class="croppable-image thumbor" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
+<img class="croppable-image weservenl" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
+
+<h1>limited proxies gumlet(ourdemo)/wnimageproxy(willnorris)/imaginary(pimmr)</h1>
+<img class="croppable-image gumlet" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
+<img class="croppable-image wnimageproxy" src="https://willnorris.com/2006/02/los-angeles-skyline.jpg" width="300">
+<img class="croppable-image imaginary" src="https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/GettyImages-74439287.jpg" width="300">
+
+<hr />
+<div class="cropthemall">crop them all (with no automatic close and shift-wheel</div>
+<div class="closethemall">close them all</div>
+</div>
