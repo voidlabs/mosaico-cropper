@@ -2,6 +2,6 @@ theme: jekyll-theme-cayman
 defaults:
   -
     scope:
-      path: "test.html"
+      path: ""
     values:
       layout: "default"
