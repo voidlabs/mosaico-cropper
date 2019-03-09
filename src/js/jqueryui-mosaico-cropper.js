@@ -41,16 +41,16 @@ function mosaicoCropper(imgEl, options, widget) {
     var htmlTemplate = '<div class="mo-cropper cropper-hidden" tabindex="-1">'+
       '<div class="cropper-frame">'+
         '<div class="clipping-container">'+
+          '<div class="toolbar">'+
+          '<div class="copper-zoom-slider"></div>'+
+          '<div class="tool-crop"><i class="fa fa-check" aria-hidden="true"></i></div>'+
+          '</div>'+
           '<img draggable="false" class="clipped clipped-image original-src">'+
         '</div>'+
         '<div class="clip-handle ui-resizable-s"></div>'+
       '</div>'+
       '<div class="outer-image-container">'+
         '<img class="outer-image original-src">'+
-      '</div>'+
-      '<div class="toolbar">'+
-      '<div class="copper-zoom-slider"></div>'+
-      '<div class="tool-crop"><i class="fa fa-check" aria-hidden="true"></i></div>'+
       '</div>'+
     '</div>';
 

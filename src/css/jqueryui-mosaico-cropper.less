@@ -3,6 +3,7 @@
     position: relative;
     font-size: 16px;
     line-height: 16px;
+    outline: none; /* prevent focus outline */
 
     img {
         user-select: none;
@@ -61,6 +62,7 @@
 
     .clipping-container {
         overflow: hidden;
+        position: relative;
         height: 100%;
         width: 100%;
     }
@@ -77,45 +79,53 @@
         margin-top:-10px;
 
         transition-property: z-index, margin-top;
-        transition-duration: 200ms, 200ms;
-        transition-delay: 200ms, 200ms;
+        transition-duration: .5s, .5s;
+        /* transition-delay: 200ms, 200ms; */
 
         &:before {
+            transition-property: background-color, height;
+            transition-duration: .2s;
+
             content: "";
-            position: absolute;
+            position: relative;
             display: block;
             top: 10px;
-            background-color: #ff5722;
+            background-color: #CCC;
             box-shadow: 1px 1px 3px #727272;
-            left: -15px;
-            width: 30px;
-            height: 17px;
-            border-bottom-left-radius: 15px;
-            border-bottom-right-radius: 15px;
-        }
+            left: -25px;
+            width: 50px;
+            height: 10px;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
 
+        }
         &:hover:before {
-            height: 19px;
+            height: 12px;
         }
 
         &:after {
-            content: "\f103";
-            position: absolute;
+            content: "\f107";
+            /* content: "\f103"; */
+            position: relative;
             display: block;
             font-family: FontAwesome;
             color: #eee;
-            top: 9px;
+            top: -4px;
             left: -15px;
             width: 30px;
             height: auto;
             border: none;
         }
 
-        &:hover:after {
-            top: 11px;
-            border-color: white;
-        }
 
+    }
+
+    &.cropper-moving.cropper-moving-handle .clip-handle {
+    
+        &:before {
+            background-color: #ff5722;
+            height: 15px;
+        }
     }
 
     &.cropper-moving:not(.cropper-moving-handle) .clip-handle, &.cropper-loading .clip-handle {
@@ -123,39 +133,54 @@
         margin-top: -30px;
     }
 
-    &.cropper-moving:not(.cropper-moving-slide):not(.cropper-moving-wheel) .ui-slider {
-        pointer-events: none;
-        opacity: 0;
+    .toolbar {
+        position: absolute;
         bottom: 0;
+        height: 20px;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        background-image: linear-gradient(transparent, rgba(0,0,0,.05), rgba(0,0,0,.2), rgba(0,0,0,.6));
+        padding: 4px;
+        transition-property: opacity, bottom;
+        transition-duration: .5s;
+        transition-timing-function: ease-in-out;
+        pointer-events: all;
+        z-index: 1;
+        opacity: 1;
+    }
+
+    &.mo-cropper.cropper-moving:not(.cropper-moving-slide):not(.cropper-moving-wheel) .toolbar {
+        pointer-events: none;
+        opacity: .1;
+        bottom: -40px;
     }
 
     .ui-slider {
-        transition-property: opacity, bottom;
-        transition-duration: 200ms, 200ms;
-        transition-delay: 200ms, 200ms;
-
         z-index: 1000;
-        bottom: 20px;
-        position: absolute;
-        left: 20px;
-        width: calc(100% - 40px);
+        position: relative;
         height: 4px;
         background-color: white;
-        box-shadow: inset 1px 1px 3px grey;
         border: none;
 
-        /* accomodate tool button */
-        left: 15px;
-        width: calc(100% - 40px - 30px);
+        flex: 1 1 50%;
+        border-radius: 3px;
+        margin: 8px;
 
         /* default styles from jquery skin, we declare them again as we don't need the jquery ui css */
         .ui-slider-handle {
             position: absolute;
-            width: 20px;
-            margin-left: -10px;
-            height: 20px;
-            top: -.5em;
-            background-color: #ff5722 !important;
+
+            transition-property: background-color, top, width, margin-left, height;
+            transition-duration: .2s;
+
+            margin-left: -7px;
+            top: -5px;
+            width: 14px;
+            height: 14px;
+            background-color: #bfbfbf!important;
+
             box-shadow: 1px 1px 3px #727272;
             background-image: none;
             border: none;
@@ -164,12 +189,28 @@
             &:focus {
                 outline: 0 none;
             }
+            &:hover {
+                margin-left: -8px;
+                top: -6px;
+                width: 16px;
+                height: 16px;
+            }
         }
+    }
+
+    &.mo-cropper.cropper-moving-slide .ui-slider .ui-slider-handle {
+        margin-left: -10px;
+        top: -8px;
+        width: 20px;
+        height: 20px;
+        background-color: #ff5722 !important;
     }
 
     &:not(.cropper-has-changes) .tool-crop .fa:before {
         /* close / fa-times */
         content: "\f00d";
+        /* content: "\f125"; */
+        /* content: "\f00c"; */
     }
 
     &.cropper-loading .tool-crop .fa:before {
@@ -178,34 +219,24 @@
     }
 
     .tool-crop {
-        transition-property: opacity, bottom;
-        transition-duration: 200ms, 200ms;
-        transition-delay: 200ms, 200ms;
-        /* content: "\f125"; */
-        /* content: "\f00c"; */
-        /*
-        font-family: FontAwesome;
-        */
-        color: #eee;
-
+        color: white;
         cursor: pointer;
-
+        /* 
         background-color: #ff5722 !important;
         box-shadow: 1px 1px 3px #727272;
+        */ 
         background-image: none;
         border: none;
         border-radius: 100%;
 
-
-        position: absolute;
-        bottom: 8px;
-        right: 8px;
         width: 30px;
         height: 30px;
         z-index: 400;
 
         padding: 6px;
         box-sizing: border-box;
+
+        flex: 0 0 30px;
     }
 
     &.cropper-loading .tool-crop .fa {
@@ -213,10 +244,6 @@
       animation: fa-spin 2s infinite linear;
     }
 
-    &.cropper-moving:not(.cropper-moving-slide):not(.cropper-moving-wheel) .tool-crop {
-        pointer-events: none;
-        opacity: 0;
-        bottom: 0;
-    }
+
 
 }
