@@ -48,8 +48,10 @@ function mosaicoCropper(imgEl, options, widget) {
       '<div class="outer-image-container">'+
         '<img class="outer-image original-src">'+
       '</div>'+
+      '<div class="toolbar">'+
       '<div class="copper-zoom-slider"></div>'+
       '<div class="tool-crop"><i class="fa fa-check" aria-hidden="true"></i></div>'+
+      '</div>'+
     '</div>';
 
     /** GETTERS **/
