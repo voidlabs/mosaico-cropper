@@ -28,7 +28,11 @@
   },
   "devDependencies": {
     "autoprefixer": "9.4.9",
+    "connect-livereload": "^0.6.1",
     "csswring": "6.0.3",
+    "express": "^4.16.4",
+    "gm": "^1.23.1",
+    "got": "^9.6.0",
     "grunt": "^1.0.3",
     "grunt-contrib-clean": "2.0.0",
     "grunt-contrib-compress": "^1.4.3",
@@ -36,10 +40,12 @@
     "grunt-contrib-less": "2.0.0",
     "grunt-contrib-uglify": "4.0.0",
     "grunt-contrib-watch": "1.1.0",
+    "grunt-express-server": "^0.5.4",
+    "grunt-keepalive": "^1.0.0",
     "grunt-postcss": "0.9.0",
     "grunt-release": "0.13.1",
-    "load-grunt-tasks": "4.0.0",
-    "lodash": "4.17.11",
-    "jshint-stylish": "2.2.1"
+    "jshint-stylish": "2.2.1",
+    "load-grunt-tasks": "^4.0.0",
+    "lodash": "4.17.11"
   }
 }

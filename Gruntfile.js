@@ -67,7 +67,7 @@ module.exports = function(grunt) {
         options: {
           livereload: true
         },
-        files: ['dist/*'],
+        files: ['dist/*', '*.html'],
       },
       jshint: {
         files: ['src/js/*.js', 'Gruntfile.js'],
@@ -76,7 +76,24 @@ module.exports = function(grunt) {
       js: {
         files: ['src/js/*.js'],
         tasks: ['uglify']
-    }
+      },
+      express: {
+        files: [ 'backend/*.js', 'package.json' ],
+        tasks: [ 'express:dev' ],
+        options: {
+          spawn: false // for grunt-contrib-watch v0.5.0+, "nospawn: true" for lower versions. Without this option specified express won't be reloaded
+        }
+      }
+    },
+
+    express: {
+      dev: {
+        options: {
+          script: 'backend/main.js',
+          background: true,
+          port: 9009,
+        }
+      }
     },
 
     uglify: {
@@ -121,7 +138,8 @@ module.exports = function(grunt) {
 
   grunt.registerTask('css', ['less', 'postcss']);
   grunt.registerTask('js', ['jshint', 'uglify']);
+  grunt.registerTask('server', ['express', 'watch', 'keepalive']);
   grunt.registerTask('build', ['js', 'css']);
-  grunt.registerTask('default', ['build']);
+  grunt.registerTask('default', ['build', 'server']);
 
 };

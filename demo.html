@@ -245,9 +245,24 @@ $(function() {
         }
     };
 
+    // Bundled demo backend
+    var mosaicoURLAdapter = {
+        defaultPrefix: '/img',
+        // TODO add simple crop and resize method support
+        fromSrc: function(src) {
+            var res = urlParser("{urlPrefix:https?://[^/]*/img}\\?method=(cropresize&params={cropWidth},{cropHeight},{cropX},{cropY},{width},{height})&url={urlPostfix:.*}", src);
+            if (res) res.urlOriginal = decodeURIComponent(res.urlPostfix);
+            return res;
+        },
+        toSrc: function(p) {
+            p.encodedUrlOriginal = encodeURIComponent(p.urlOriginal);
+            return stringTemplate("{urlPrefix}?method=cropresize&params={cropWidth},{cropHeight},{cropX},{cropY},{width},{height}&url={encodedUrlOriginal}", p);
+        }
+    };
+
 
     function automaticURLAdapter(el) {
-        var urlAdapter = cloudinaryURLAdapter;
+        var urlAdapter = mosaicoURLAdapter;
         if (el.classList.contains("sirv")) urlAdapter = sirvURLAdapter;
         if (el.classList.contains("imagekit")) urlAdapter = imagekitURLAdapter;
         if (el.classList.contains("cloudimage")) urlAdapter = cloudimageURLAdapter;
@@ -387,6 +402,11 @@ $(function() {
 <img class="croppable-image gumlet" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
 <img class="croppable-image wnimageproxy" src="https://willnorris.com/2006/02/los-angeles-skyline.jpg" width="300">
 <img class="croppable-image imaginary" src="https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/GettyImages-74439287.jpg" width="300">
+
+<h1>local mosaico demo backend cropper</h1>
+<img class="croppable-image" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
+<img class="croppable-image" src="/img?method=cropresize&params=385,258,184,412,300,201&url=https%3A%2F%2Fd19lgisewk9l6l.cloudfront.net%2Fassetbank%2FNorthern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
+
 
 <hr />
 <div class="cropthemall">crop them all (with no automatic close and shift-wheel</div>
