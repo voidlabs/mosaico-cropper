@@ -130,9 +130,9 @@ function mosaicoCropper(imgEl, options, widget) {
     }
 
     function updateCropperFrameSize(newCropHeight, newCropWidth) {
-        cropModel.crop.height = newCropHeight;
+        cropModel.crop.height = parseInt(newCropHeight);
         if (newCropWidth !== undefined) {
-            cropModel.crop.width = newCropWidth;
+            cropModel.crop.width = parseInt(newCropWidth);
             rootEl.css({ width: cropModel.crop.width+"px" });
         }
         cropperFrameEl.css({ height: cropModel.crop.height+"px", width: cropModel.crop.width+"px" });
@@ -183,6 +183,16 @@ function mosaicoCropper(imgEl, options, widget) {
         }
 
         return changed;
+    }
+
+    function updatePanZoomToFitCropContainer() {
+        // TODO this code is similar to the initializeSizes, maybe we should merge them.
+        var newScale, newLeft, newTop;
+        newScale = cropModel.minScale;
+        var resizedSize = getScaledImageSize(newScale);
+        newLeft = Math.round((cropModel.crop.width - resizedSize.width) / 2);
+        newTop = Math.round((cropModel.crop.height - resizedSize.height) / 2);
+        return updateCropContainerPanZoom(newLeft, newTop, newScale);
     }
 
     function updateScale(newScale, xp, yp, updateSlider) {
@@ -296,6 +306,10 @@ function mosaicoCropper(imgEl, options, widget) {
             }
 
             return false;
+        }).on("dblclick", function(event) {
+            // TODO temporary added the functionality to doubleclick
+            updatePanZoomToFitCropContainer();
+            changed("dblclick");
         }).on("click", function(event) {
             rootEl.focus();
             toggleMovingClass('click');
@@ -402,6 +416,10 @@ function mosaicoCropper(imgEl, options, widget) {
     }
 
     function changed() { // n
+        // TODO remove me, this is just log the current resize method
+        var ccs = getCurrentComputedSizes();
+        // console.log("CURRENT METHOD", ccs.method);
+
         rootEl.addClass("cropper-has-changes");
     }
 
@@ -415,27 +433,55 @@ function mosaicoCropper(imgEl, options, widget) {
         });
     }
 
-    function generateCurrentUrl() {
+    function getCurrentComputedSizes() {
         var scaledSize = getScaledImageSize();
+
+        var l = -cropModel.container.left,
+            r = scaledSize.width - cropModel.crop.width + cropModel.container.left,
+            t = -cropModel.container.top,
+            b = scaledSize.height - cropModel.crop.height + cropModel.container.top;
+
         var res = {
             resizeWidth: scaledSize.width,
             resizeHeight: scaledSize.height,
-            offsetX: Math.max(-cropModel.container.left),
-            offsetY: Math.max(-cropModel.container.top),
-            cropX: Math.max(0, Math.round(-cropModel.container.left / cropModel.scale)),
-            cropY: Math.max(0, Math.round(-cropModel.container.top / cropModel.scale)),
+            offsetX: Math.max(0, -cropModel.container.left),
+            offsetY: Math.max(0, -cropModel.container.top),
+            cropX: Math.max(0, Math.round(l / cropModel.scale)),
+            cropY: Math.max(0, Math.round(t / cropModel.scale)),
             cropWidth: Math.round(cropModel.crop.width / cropModel.scale),
             cropHeight: Math.round(cropModel.crop.height / cropModel.scale),            
             width: cropModel.crop.width,
-            height: cropModel.crop.height,
-            urlPrefix: options.urlPrefix,
-            urlPostfix: options.urlPostfix,
-            urlOriginal: options.urlOriginal,
-            encodedUrlOriginal: encodeURIComponent(options.urlOriginal),
-            cropThenResize: options.cropX !== undefined,
+            height: cropModel.crop.height
         };
+
         res.cropX2 = res.cropX + res.cropWidth;
         res.cropY2 = res.cropY + res.cropHeight;
+        // TODO check X2 vs X2b
+        // res.cropX2b = Math.round((l+cropModel.crop.width) / cropModel.scale); // Math.min(originalImageSize.width, );
+        // res.cropY2b = Math.round((t+cropModel.crop.height) / cropModel.scale); // Math.min(originalImageSize.height, );
+        // if (res.cropX2 !== res.cropX2b) console.debug("TODO check best X2 pos: ", res.cropX2, res.cropX2b);
+        // if (res.cropY2 !== res.cropY2b) console.debug("TODO check best Y2 pos: ", res.cropY2, res.cropY2b);
+        // TODO check out of bound indexes (we have protections on negative numbers, but not on the max width/height/right/bottom)
+
+        var dx = Math.abs(l-r),
+            dy = Math.abs(t-b);
+
+        res.method = options.cropX !== undefined ? 'cropresize' : 'resizecrop';
+        if (dx <= 1 && dy <= 1 && (l === 0 || t === 0)) {
+            if (l === 0 && t === 0) res.method = cropModel.scale !== 1 ? 'resize' : 'original';
+            else res.method = 'cover';
+        }
+
+        return res;
+    }
+
+    function generateCurrentUrl() {
+        var res = getCurrentComputedSizes();
+        res.urlPrefix = options.urlPrefix;
+        res.urlPostfix = options.urlPostfix;
+        res.urlOriginal = options.urlOriginal;
+        res.cropThenResize = options.cropX !== undefined;
+        res.encodedUrlOriginal = encodeURIComponent(options.urlOriginal);
 
         var toSrc = options.urlAdapter.toSrc;
         if (typeof toSrc == 'object') {
