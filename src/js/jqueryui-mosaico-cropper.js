@@ -405,6 +405,16 @@ function mosaicoCropper(imgEl, options, widget) {
         rootEl.addClass("cropper-has-changes");
     }
 
+    function _stringTemplate(string, obj) {
+        return string.replace(/\{([^[\}]+)\}/g, function(match, contents, offset, input_string) {
+            if (obj.hasOwnProperty(contents)) {
+                return obj[contents] !== undefined ? obj[contents] : '';
+            } else {
+                return match;
+            }
+        });
+    }
+
     function generateCurrentUrl() {
         var scaledSize = getScaledImageSize();
         var res = {
@@ -426,8 +436,16 @@ function mosaicoCropper(imgEl, options, widget) {
         };
         res.cropX2 = res.cropX + res.cropWidth;
         res.cropY2 = res.cropY + res.cropHeight;
-        var url = options.urlAdapter.toSrc(res);
-        return url;
+
+        var toSrc = options.urlAdapter.toSrc;
+        if (typeof toSrc == 'object') {
+            if (!res.cropThenResize && toSrc.resizeThenCrop) toSrc = toSrc.resizeThenCrop;
+            else toSrc = toSrc.default;
+        }
+        if (typeof toSrc == 'string') {
+            toSrc = _stringTemplate.bind(undefined, toSrc);
+        }
+        return toSrc(res);
     }
 
     function updateOriginalImageSrc(done) { // n
@@ -483,12 +501,82 @@ function mosaicoCropper(imgEl, options, widget) {
     }
 
 
+    var _urlParserPatterns = {
+        encodedUrlOriginal: '[^ &\\?]+',
+        width: '[0-9]+',
+        height: '[0-9]+',
+        resizeWidth: '[0-9]+',
+        resizeHeight: '[0-9]+',
+        offsetX: '[0-9]+',
+        offsetY: '[0-9]+',
+        cropWidth: '[0-9]+',
+        cropHeight: '[0-9]+',
+        cropX: '[0-9]+',
+        cropY: '[0-9]+',
+        cropX2: '[0-9]+',
+        cropY2: '[0-9]+',
+    };
+
+    // pattern is a pseudo regex where {tokens} are replaced with "[0-9]+" and  {tokens:regex} are replaced with "regex"
+    // the matcher remember the tokens names and returns a matching object using named matches, like named capture groups 
+    // (named capture groups have been implemented only by ES2018, so we can't use them)
+    function _urlParser(pattern, url) {
+        var matchNames = [];
+        var regex = new RegExp('^'+pattern.replace(/\\.|(\((?!\?[!:=]))|\{([^:\}]+)(?::([^\}]+))?\}/g, function(match, braket, groupName, subPattern, offset, input_string) {
+            // console.log("X", match, braket, groupName, subPattern, offset, input_string);
+            if (braket) {
+                // existing regex match
+                matchNames.push('');
+                return match;
+            } else if (groupName) {
+                // named group
+                matchNames.push(groupName);
+                if (subPattern) {
+                    // deal with sub patterns matching groups
+                    subPattern.replace(/\\.|(\((?!\?[!:=]))/g, function(innerMatch, innerBraket) {
+                        if (innerBraket) matchNames.push('');
+                        return match;
+                    });
+                    return '('+subPattern+')';
+                // encodedUrlOriginal may not have "http://" prefix
+                } else if (_urlParserPatterns[groupName]) return '('+_urlParserPatterns[groupName]+')';
+                else throw "Uknown token "+groupName+", please use {"+groupName+":regex} or use a known pattern";
+            } else {
+                // escaped char
+                return match;
+            }
+        })+'$');
+
+        var res = url.match(regex);
+
+        var matches = null;
+        if (res !== null) {
+            if (res.length !== matchNames.length + 1) {
+                // TODO improve error reporting
+                console.log("ERROR parsing pattern!", pattern, matchNames, res);
+            }
+            matches = {};
+            for (var i = 0; i < matchNames.length; i++) {
+                if (matchNames[i] !== '' && res[i+1] !== undefined) {
+                    matches[matchNames[i]] = res[i+1];
+                }
+            }
+        }
+        // console.log("p", matches, pattern, url, matchNames, regex);
+        return matches;
+    }
+
+
     var rootEl = $(htmlTemplate);
 
     $(imgEl).after(rootEl);
     if (options.imgLoadingClass) $(imgEl).addClass(options.imgLoadingClass);
 
-    var urlAdapterResult = options.urlAdapter.fromSrc(imgEl.src);
+    var fromSrc = options.urlAdapter.fromSrc;
+    if (typeof fromSrc == 'string') {
+        fromSrc = _urlParser.bind(undefined, fromSrc);
+    }
+    var urlAdapterResult = fromSrc(imgEl.src);
 
     if (!urlAdapterResult) {
         if (options.urlAdapter.defaultPrefix !== undefined) {
@@ -502,6 +590,8 @@ function mosaicoCropper(imgEl, options, widget) {
     } else if (urlAdapterResult.encodedUrlOriginal) {
         urlAdapterResult.urlOriginal = decodeURIComponent(urlAdapterResult.encodedUrlOriginal);
     }
+
+    console.log("XXX", options);
 
     $.extend(options, urlAdapterResult);
     if (!options.width) {
