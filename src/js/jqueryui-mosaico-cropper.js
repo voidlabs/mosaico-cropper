@@ -421,6 +421,7 @@ function mosaicoCropper(imgEl, options, widget) {
             urlPrefix: options.urlPrefix,
             urlPostfix: options.urlPostfix,
             urlOriginal: options.urlOriginal,
+            encodedUrlOriginal: encodeURIComponent(options.urlOriginal),
             cropThenResize: options.cropX !== undefined,
         };
         res.cropX2 = res.cropX + res.cropWidth;
@@ -498,6 +499,8 @@ function mosaicoCropper(imgEl, options, widget) {
             // TODO handle bad parameters, log it and fails the initialization!
             console.error("FAILED PARSING", imgEl.src);
         }
+    } else if (urlAdapterResult.encodedUrlOriginal) {
+        urlAdapterResult.urlOriginal = decodeURIComponent(urlAdapterResult.encodedUrlOriginal);
     }
 
     $.extend(options, urlAdapterResult);

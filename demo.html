@@ -86,7 +86,7 @@ $(function() {
     function stringTemplate(string, obj) {
         return string.replace(/\{([^[\}]+)\}/g, function(match, contents, offset, input_string) {
             if (obj.hasOwnProperty(contents)) {
-                return obj[contents];
+                return obj[contents] !== undefined ? obj[contents] : '';
             } else {
                 return match;
             }
@@ -112,9 +112,9 @@ $(function() {
         },
         toSrc: function(p) {
             if (p.cropThenResize)
-                return stringTemplate("{urlPrefix}/tr:w-{resizeWidth},h-{resizeHeight}:w-{width},h-{height},cm-extract,x-{offsetX},y-{offsetY},fo-top_left{urlPostfix}", p);
-            else
                 return stringTemplate("{urlPrefix}/tr:w-{cropWidth},h-{cropHeight},cm-extract,x-{cropX},y-{cropY},fo-top_left:w-{width},h-{height}{urlPostfix}", p);
+            else
+                return stringTemplate("{urlPrefix}/tr:w-{resizeWidth},h-{resizeHeight}:w-{width},h-{height},cm-extract,x-{offsetX},y-{offsetY},fo-top_left{urlPostfix}", p);
         }
     };
 
@@ -125,7 +125,6 @@ $(function() {
             return urlParser("{urlPrefix:[^\\?]*}{urlOriginal:http[^\\?]*}?\\?(width={width}|(extract={cropX},{cropY},{cropWidth},{cropHeight}&)?mode=crop&width={width}&height={height})", src);
         },
         toSrc: function(p) {
-            if (p.urlOriginal == undefined) p.urlOriginal = '';
             return stringTemplate("{urlPrefix}{urlOriginal}?extract={cropX},{cropY},{cropWidth},{cropHeight}&mode=crop&width={width}&height={height}", p);
         }
     };
@@ -146,7 +145,8 @@ $(function() {
             return urlParser("{urlPrefix:((?!/-/).)*/}(-/resize/{width}x/|-/resize/{resizeWidth}x/-/crop/{width}x{height}/{offsetX},{offsetY}/|-/scale_crop/{width}x{height}/)", src);
         },
         toSrc: function(p) {
-            return stringTemplate("{urlPrefix}-/resize/{resizeWidth}x/-/crop/{width}x{height}/{offsetX},{offsetY}/", p);
+            return stringTemplate("{urlPrefix}-/crop/{cropWidth}x{cropHeight}/{cropX},{cropY}/-/resize/{width}x/", p);
+            // return stringTemplate("{urlPrefix}-/resize/{resizeWidth}x/-/crop/{width}x{height}/{offsetX},{offsetY}/", p);
         }
     };
 
@@ -172,12 +172,9 @@ $(function() {
             // https://images.weserv.nl/?w=399&h=399&crop=300,300,43,63&url=https%3A%2F%2Fimages.weserv.nl%2F%3Fw%3D500%26h%3D615%26crop%3D300%2C300%2C100%2C100%26url%3Dory.weserv.nl%252Flichtenstein.jpg
             // https://images.weserv.nl/?w=500&h=615&t=fitup&crop=300,300,38,9&url=ory.weserv.nl%2Flichtenstein.jpg
             // https://images.weserv.nl/?w=300&h=100&t=square&url=ory.weserv.nl/lichtenstein.jpg
-            var res = urlParser("{urlPrefix:https?://[^/]*/}\\?(w={width}&h={height}&t=square&|w={resizeWidth}&h={resizeHeight}&t=fitup&crop={width},{height},{offsetX},{offsetY}&)?url={urlPostfix:.*}", src);
-            if (res) res.urlOriginal = decodeURIComponent(res.urlPostfix);
-            return res;
+            return urlParser("{urlPrefix:https?://[^/]*/}\\?(w={width}&h={height}&t=square&|w={resizeWidth}&h={resizeHeight}&t=fitup&crop={width},{height},{offsetX},{offsetY}&)?url={encodedUrlOriginal}", src);
         },
         toSrc: function(p) {
-            p.encodedUrlOriginal = encodeURIComponent(p.urlOriginal);
             return stringTemplate("{urlPrefix}?w={resizeWidth}&h={resizeHeight}&t=fitup&crop={width},{height},{offsetX},{offsetY}&url={encodedUrlOriginal}", p);
         }
     };
@@ -235,12 +232,9 @@ $(function() {
         // https://static.pimmr.me/extract?width=400&height=400&top=100&left=50&areawidth=300&areaheight=200&url=https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/33-1.jpeg
         // https://static.pimmr.me/extract?width=483&height=322&left=173&top=84&areawidth=300&areaheight=200&url=https%3A%2F%2Fs3.eu-central-1. amazonaws.com%2Fsasapost%2Fwp-content%2Fuploads%2FGettyImages-74439287.jpg
         fromSrc: function(src) {
-            var res = urlParser("{urlPrefix:https?://[^/]*/}(resize\\?width={width}&nocrop=true|resize\\?width={width}&height={height}|extract\\?width={resizeWidth}&height={resizeHeight}&left={offsetX}&top={offsetY}&areawidth={width}&areaheight={height})&url={urlPostfix:.*}", src);
-            if (res) res.urlOriginal = decodeURIComponent(res.urlPostfix);
-            return res;
+            return urlParser("{urlPrefix:https?://[^/]*/}(resize\\?width={width}&nocrop=true|resize\\?width={width}&height={height}|extract\\?width={resizeWidth}&height={resizeHeight}&left={offsetX}&top={offsetY}&areawidth={width}&areaheight={height})&url={encodedUrlOriginal}", src);
         },
         toSrc: function(p) {
-            p.encodedUrlOriginal = encodeURIComponent(p.urlOriginal);
             return stringTemplate("{urlPrefix}extract\?width={resizeWidth}&height={resizeHeight}&left={offsetX}&top={offsetY}&areawidth={width}&areaheight={height}&url={encodedUrlOriginal}", p);
         }
     };
@@ -250,12 +244,9 @@ $(function() {
         defaultPrefix: '/img',
         // TODO add simple crop and resize method support
         fromSrc: function(src) {
-            var res = urlParser("{urlPrefix:https?://[^/]*/img}\\?method=(cropresize&params={cropWidth},{cropHeight},{cropX},{cropY},{width},{height})&url={urlPostfix:.*}", src);
-            if (res) res.urlOriginal = decodeURIComponent(res.urlPostfix);
-            return res;
+            return urlParser("{urlPrefix:https?://[^/]*/img}\\?method=(cropresize&params={cropWidth},{cropHeight},{cropX},{cropY},{width},{height})&url={encodedUrlOriginal}", src);
         },
         toSrc: function(p) {
-            p.encodedUrlOriginal = encodeURIComponent(p.urlOriginal);
             return stringTemplate("{urlPrefix}?method=cropresize&params={cropWidth},{cropHeight},{cropX},{cropY},{width},{height}&url={encodedUrlOriginal}", p);
         }
     };
