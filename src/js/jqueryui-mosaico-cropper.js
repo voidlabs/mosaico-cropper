@@ -148,7 +148,7 @@ function mosaicoCropper(imgEl, options, widget) {
         }
     }
 
-    function updateCropContainerPanZoom(newLeft, newTop, newScale, updateCropContainer) {
+    function updateCropContainerPanZoom(newLeft, newTop, newScale, updateCropContainer, updateSlider) {
         var changed = false;
 
         if (newScale !== undefined) {
@@ -181,6 +181,8 @@ function mosaicoCropper(imgEl, options, widget) {
             if (updateCropContainer === undefined || updateCropContainer) imageCropContainerEl.css(newSizes);
             // clippedEl.css("transform", "translateX("+cropModel.container.left+"px) translateY("+cropModel.container.top+"px)");
             clippedEl.css(newSizes);
+
+            if (newScale && updateSlider !== false) sliderEl.slider("value", _fromScaleToSliderValue(newScale) );
         }
 
         return changed;
@@ -209,9 +211,9 @@ function mosaicoCropper(imgEl, options, widget) {
                 newLeft = cropModel.container.left - xd,
                 newTop = cropModel.container.top - yd;
 
-            updateCropContainerPanZoom(newLeft, newTop, newScale);
-            if (updateSlider !== false) sliderEl.slider("value", _fromScaleToSliderValue(newScale) );
-        }
+            updateCropContainerPanZoom(newLeft, newTop, newScale, undefined, updateSlider);
+            return true;
+        } else return false;
     }
 
     function updateCropHeightInternal(newHeight, origHeight, originalOuterTop, maxHeight) {
@@ -239,19 +241,25 @@ function mosaicoCropper(imgEl, options, widget) {
     function updateCropHeight(newHeight) {
         var origHeight = cropModel.crop.height;
         updateCropHeightInternal(newHeight, origHeight, cropModel.container.top, getScaledImageSize().height);
+        return origHeight !== cropModel.crop.height;
     }
 
     function updatePanZoomCropToFitWidthAndAspect() {
         var newScale = options.width / originalImageSize.width;
         var newHeight = Math.round(originalImageSize.height * newScale);
-        updateCropHeight(newHeight);
-        updateScale(newScale);
+        // TODO maybe we could merge the updateScale in the updateCropHeight call.
+        var changed = updateCropHeight(newHeight);
+        changed = updateScale(newScale) || changed;
+        return changed;
     }
 
     function updateSmartAutoResize() {
         var done = updatePanZoomToFitCropContainer();
         if (!done) {
-            updatePanZoomCropToFitWidthAndAspect();
+            done = updatePanZoomCropToFitWidthAndAspect();
+            if (!done) {
+                updateScale(1);
+            }
         }
         changed("autosize");
     }
@@ -520,7 +528,7 @@ function mosaicoCropper(imgEl, options, widget) {
         return toSrc(res);
     }
 
-    function updateOriginalImageSrc(done) { // n
+    function updateOriginalImageSrc(done, fail) { // n
         var url = generateCurrentUrl();
 
         rootEl.addClass("cropper-loading");
@@ -530,6 +538,10 @@ function mosaicoCropper(imgEl, options, widget) {
             // not needed, as we're going to remove the whole element.
             rootEl.removeClass("cropper-loading");
             done();
+        }, function(err) {
+            rootEl.removeClass("cropper-loading");
+            rootEl.addClass("cropper-has-changes");
+            fail();
         });
 
         rootEl.removeClass("cropper-has-changes");
@@ -540,7 +552,10 @@ function mosaicoCropper(imgEl, options, widget) {
     function updateAndDispose() {
         if (!closing) {
             closing = true;
-            updateOriginalImageSrc(dispose);
+            updateOriginalImageSrc(dispose, function() { 
+                // TODO what should we do when saving fails?
+                closing = false;
+            });
         }
     }
 
@@ -550,9 +565,13 @@ function mosaicoCropper(imgEl, options, widget) {
 
         if (containerEl) containerEl.removeClass("cropper-cropping");
 
-        cropperFrameEl.resizable("destroy");
-        imageCropContainerEl.draggable("destroy");
-        sliderEl.slider("destroy");
+        try {
+            cropperFrameEl.resizable("destroy");
+            imageCropContainerEl.draggable("destroy");
+            sliderEl.slider("destroy");
+        } catch (error) {
+            
+        }
 
         rootEl.remove();
 
@@ -564,10 +583,15 @@ function mosaicoCropper(imgEl, options, widget) {
         if (!noCallback && typeof widget !== 'undefined') widget.destroy();
     }
 
-    function preloadImage(src, done) {
+    function preloadImage(src, done, error) {
         var img = new Image();
         img.onload = function() {
             done(img, src);
+        };
+        img.onerror = function(err) {
+            // TODO error reporting.
+            console.log("TODO img preload failed", err);
+            if (error) error(src);
         };
         img.src = src;
     }
@@ -704,6 +728,10 @@ function mosaicoCropper(imgEl, options, widget) {
         };
         // initialize.call(thisVar);
         initialize();
+    }, function(src) {
+        // TODO handle initialization error
+        console.error("TODO Autodispose?");
+        setTimeout(dispose);
     });
 
     return {
