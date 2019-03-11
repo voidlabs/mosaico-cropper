@@ -591,8 +591,6 @@ function mosaicoCropper(imgEl, options, widget) {
         urlAdapterResult.urlOriginal = decodeURIComponent(urlAdapterResult.encodedUrlOriginal);
     }
 
-    console.log("XXX", options);
-
     $.extend(options, urlAdapterResult);
     if (!options.width) {
         options.width = imgEl.width;
