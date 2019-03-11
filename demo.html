@@ -273,6 +273,23 @@ $(function() {
         }
     };
 
+    //Cimage.se
+    var cimageURLAdapter = {
+        defaultPrefix: 'https://cimage.se/cimage/imgd.php',
+        // https://cimage.se/cimage/imgd.php?src=example/kodim13.png&w=300
+        // https://cimage.se/cimage/imgd.php?src=example/kodim13.png&w=300&h=100&crop-to-fit
+        // https://cimage.se/cimage/imgd.php?src=example/kodim04.png&crop=300,300,100,220&w=300
+        // https://cimage.se/image/example/kodim04.png?w=300
+        // https://cimage.se/image/example/kodim04.png?w=300&h=100&crop-to-fit
+        // https://cimage.se/image/example/kodim04.png?crop=300,300,100,220&w=300
+        fromSrc: function(src) {
+            return urlParser("{urlPrefix:https?://[^\\?]*\\?(src=[^&]*&)?}(w={width}|w={width}&h={height}&crop-to-fit|crop={cropWidth},{cropHeight},{cropX},{cropY}&w={width})", src);
+        },
+        toSrc: function(p) {
+            return stringTemplate("{urlPrefix}crop={cropWidth},{cropHeight},{cropX},{cropY}&w={width}", p);
+        }
+    };
+
 
     function automaticURLAdapter(el) {
         var urlAdapter = mosaicoURLAdapter;
@@ -288,6 +305,7 @@ $(function() {
         if (el.classList.contains("wnimageproxy")) urlAdapter = wnimageproxyURLAdapter;
         if (el.classList.contains("imaginary")) urlAdapter = imaginaryURLAdapter;
         if (el.classList.contains("imageflow")) urlAdapter = imageflowURLAdapter;
+        if (el.classList.contains("cimage")) urlAdapter = cimageURLAdapter;
         return urlAdapter;
     }
 
@@ -412,6 +430,11 @@ $(function() {
 <img class="croppable-image imageflow" src="https://z.zr.io/ri/zermatt.jpg;w=300">
 <img class="croppable-image imageflow" src="https://z.zr.io/ri/zermatt.jpg;w=300;h=100;mode=crop;scale=both">
 <img class="croppable-image imageflow" src="https://z.zr.io/ri/zermatt.jpg;crop=700,100,1300,700;w=300;h=300;mode=crop;scale=both">
+
+<h1>cimage</h1>
+<img class="croppable-image cimage" src="https://cimage.se/cimage/imgd.php?src=example/kodim13.png&w=300">
+<img class="croppable-image cimage" src="https://cimage.se/cimage/imgd.php?src=example/kodim13.png&w=300&h=100&crop-to-fit">
+<img class="croppable-image cimage" src="https://cimage.se/image/example/kodim04.png?crop=225,92,181,298&w=300">
 
 <h1>demo open proxies cloudimage/thumbor/weserve</h1>
 <img class="croppable-image cloudimage" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
