@@ -42,8 +42,9 @@ function mosaicoCropper(imgEl, options, widget) {
       '<div class="cropper-frame">'+
         '<div class="clipping-container">'+
           '<div class="toolbar">'+
+          '<div class="tool tool-zoom"><i class="fa fa-compress" aria-hidden="true"></i></div>'+
           '<div class="copper-zoom-slider"></div>'+
-          '<div class="tool-crop"><i class="fa fa-check" aria-hidden="true"></i></div>'+
+          '<div class="tool tool-crop"><i class="fa fa-check" aria-hidden="true"></i></div>'+
           '</div>'+
           '<img draggable="false" class="clipped clipped-image original-src">'+
         '</div>'+
@@ -240,6 +241,21 @@ function mosaicoCropper(imgEl, options, widget) {
         updateCropHeightInternal(newHeight, origHeight, cropModel.container.top, getScaledImageSize().height);
     }
 
+    function updatePanZoomCropToFitWidthAndAspect() {
+        var newScale = options.width / originalImageSize.width;
+        var newHeight = Math.round(originalImageSize.height * newScale);
+        updateCropHeight(newHeight);
+        updateScale(newScale);
+    }
+
+    function updateSmartAutoResize() {
+        var done = updatePanZoomToFitCropContainer();
+        if (!done) {
+            updatePanZoomCropToFitWidthAndAspect();
+        }
+        changed("autosize");
+    }
+
     /** INITIALIZATION METHODS */
 
     function initializeResizer() { // g
@@ -308,8 +324,7 @@ function mosaicoCropper(imgEl, options, widget) {
             return false;
         }).on("dblclick", function(event) {
             // TODO temporary added the functionality to doubleclick
-            updatePanZoomToFitCropContainer();
-            changed("dblclick");
+            updateSmartAutoResize();
         }).on("click", function(event) {
             rootEl.focus();
             toggleMovingClass('click');
@@ -397,6 +412,10 @@ function mosaicoCropper(imgEl, options, widget) {
             // rootEl.triggerHandler('focusout');
         });
 
+        rootEl.find('.tool-zoom').on("click", function() {
+            updateSmartAutoResize();
+        });
+
         rootEl.focus();
 
         initializeSizes();
@@ -415,10 +434,17 @@ function mosaicoCropper(imgEl, options, widget) {
         if (typeof widget !== 'undefined') widget._trigger('copperready');
     }
 
+    var lastMethod;
+
     function changed() { // n
         // TODO remove me, this is just log the current resize method
         var ccs = getCurrentComputedSizes();
         // console.log("CURRENT METHOD", ccs.method);
+        if (lastMethod !== ccs.method) {
+            rootEl.removeClass("cropper-method-"+lastMethod);
+            lastMethod = ccs.method;
+            rootEl.addClass("cropper-method-"+lastMethod);
+        }
 
         rootEl.addClass("cropper-has-changes");
     }

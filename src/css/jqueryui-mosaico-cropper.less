@@ -218,7 +218,7 @@
       content: "\f110" !important;
     }
 
-    .tool-crop {
+    .tool {
         color: white;
         cursor: pointer;
         /* 
@@ -238,6 +238,14 @@
 
         flex: 0 0 30px;
         max-width: 30px; /* ie10/11 fix */
+    }
+
+    &.cropper-method-cover .tool-zoom .fa:before {
+        content: "\f07d";
+    }
+
+    &.cropper-method-resize .tool-zoom .fa:before {
+        opacity: .5;
     }
 
     &.cropper-loading .tool-crop .fa {
