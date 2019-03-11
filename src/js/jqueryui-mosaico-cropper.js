@@ -207,11 +207,13 @@ function mosaicoCropper(imgEl, options, widget) {
         // Containment. An alternative to "containment" would be auto-zooming when reaching the maxHeight (but de-zooming would be counter-intuitive)
         if (!options.autoZoom && newHeight > maxHeight) newHeight = maxHeight;
 
+        newHeight = Math.round(newHeight);
+
         // Crop using vertical centering
         var newOuterTop = Math.round((newHeight - origHeight) / 2) + originalOuterTop;
         if (newOuterTop > 0) newOuterTop = 0;
 
-        updateCropperFrameSize(Math.round(newHeight));
+        updateCropperFrameSize(newHeight);
 
         // Optional code to let the scale to be updated
         var newScale = getScale();
