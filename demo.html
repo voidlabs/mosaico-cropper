@@ -260,6 +260,19 @@ $(function() {
         }
     };
 
+    // ImageFlow/ImageResizing.net adapter
+    var imageflowURLAdapter = {
+        // https://z.zr.io/ri/zermatt.jpg;w=300
+        // https://z.zr.io/ri/zermatt.jpg;w=300;h=100;mode=crop;scale=both
+        // https://z.zr.io/ri/zermatt.jpg;crop=700,100,1300,700;w=300;h=300;mode=crop;scale=both
+        fromSrc: function(src) {
+            return urlParser("{urlPrefix:https?://[^;]*};(w={width}|w={width};h={height};mode=crop;scale=both|crop={cropX},{cropY},{cropX2},{cropY2};w={width};h={height};mode=crop;scale=both)", src);
+        },
+        toSrc: function(p) {
+            return stringTemplate("{urlPrefix};crop={cropX},{cropY},{cropX2},{cropY2};w={width};h={height};mode=crop;scale=both", p);
+        }
+    };
+
 
     function automaticURLAdapter(el) {
         var urlAdapter = mosaicoURLAdapter;
@@ -274,6 +287,7 @@ $(function() {
         if (el.classList.contains("weservenl")) urlAdapter = weservenlURLAdapter;
         if (el.classList.contains("wnimageproxy")) urlAdapter = wnimageproxyURLAdapter;
         if (el.classList.contains("imaginary")) urlAdapter = imaginaryURLAdapter;
+        if (el.classList.contains("imageflow")) urlAdapter = imageflowURLAdapter;
         return urlAdapter;
     }
 
@@ -393,6 +407,11 @@ $(function() {
 <img class="croppable-image imaginary" src="https://static.pimmr.me/resize?width=300&nocrop=true&url=https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/33-1.jpeg">
 <img class="croppable-image imaginary" src="https://static.pimmr.me/resize?width=300&height=100&url=https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/GettyImages-74439287.jpg">
 <img class="croppable-image imaginary" src="https://static.pimmr.me/extract?width=1255&height=706&left=924&top=506&areawidth=300&areaheight=200&url=https%3A%2F%2Fs3.eu-central-1.amazonaws.com%2Fsasapost-media%2Fwp-content%2Fuploads%2F20180630140808%2F31785956755_fdd21edec0_o.jpg">
+
+<h1>imageflow(zzr)</h1>
+<img class="croppable-image imageflow" src="https://z.zr.io/ri/zermatt.jpg;w=300">
+<img class="croppable-image imageflow" src="https://z.zr.io/ri/zermatt.jpg;w=300;h=100;mode=crop;scale=both">
+<img class="croppable-image imageflow" src="https://z.zr.io/ri/zermatt.jpg;crop=700,100,1300,700;w=300;h=300;mode=crop;scale=both">
 
 <h1>demo open proxies cloudimage/thumbor/weserve</h1>
 <img class="croppable-image cloudimage" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
