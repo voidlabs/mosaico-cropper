@@ -30,7 +30,7 @@ var sirvURLAdapter = {
 
 // File upload via https://github.com/uploadcare/uploadcare-upload-client
 var uploadcareURLAdapter = {
-    fromSrc: "{urlPrefix:((?!/-/).)*/}(-/resize/{width}x/|-/resize/{resizeWidth}x/-/crop/{width}x{height}/{offsetX},{offsetY}/|-/scale_crop/{width}x{height}/)",
+    fromSrc: "{urlPrefix:((?!/-/).)*/}((-/crop/{cropWidth}x{cropHeight}/{cropX},{cropY}/)?-/resize/{width}x/|-/resize/{resizeWidth}x/-/crop/{width}x{height}/{offsetX},{offsetY}/|-/scale_crop/{width}x{height}/)",
     toSrc: {
         default: "{urlPrefix}-/crop/{cropWidth}x{cropHeight}/{cropX},{cropY}/-/resize/{width}x/",
         resizeThenCrop: "{urlPrefix}-/resize/{resizeWidth}x/-/crop/{width}x{height}/{offsetX},{offsetY}/",
