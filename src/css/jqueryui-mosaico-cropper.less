@@ -5,6 +5,10 @@
     line-height: 16px;
     outline: none; /* prevent focus outline */
     box-shadow: 0px 0px 1px rgba(0,0,0,.2);
+    
+    * {
+        box-sizing: border-box;
+    }
 
     img {
         user-select: none;
@@ -137,7 +141,7 @@
     .toolbar {
         position: absolute;
         bottom: 0;
-        height: 20px;
+        height: 32px;
         left: 0;
         right: 0;
         display: flex;
@@ -235,7 +239,6 @@
         z-index: 400;
 
         padding: 6px;
-        box-sizing: border-box;
 
         flex: 0 0 30px;
         max-width: 30px; /* ie10/11 fix */
