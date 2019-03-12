@@ -295,6 +295,7 @@ function mosaicoCropper(imgEl, options, widget) {
         });
         cropperFrameEl.find('.clip-handle').on("dblclick", function(event) {
             updateCropHeight(getScaledImageSize().height);
+            changed("resized");
             return false;
         });
     }
@@ -381,12 +382,14 @@ function mosaicoCropper(imgEl, options, widget) {
     function initializeSizes() {
         var newCropHeight, newLeft, newTop, newScale, newWidth;
         if (typeof options.resizeWidth !== 'undefined') {
+            // resizecrop
             newScale = options.resizeWidth / originalImageSize.width;
             newCropHeight = options.height;
             newWidth = options.width;
             newLeft = -options.offsetX;
             newTop = -options.offsetY;
         } else if (typeof options.cropX2 !== 'undefined' || typeof options.cropWidth !== 'undefined') {
+            // cropresize
             // TODO error reporting for missing mandatory parameters.
             if (options.cropWidth == undefined) options.cropWidth = options.cropX2 - options.cropX;
             if (options.cropHeight == undefined) options.cropHeight = options.cropY2 - options.cropY;
@@ -397,17 +400,28 @@ function mosaicoCropper(imgEl, options, widget) {
             newWidth = options.width;
             newLeft = Math.round(-options.cropX * newScale);
             newTop = Math.round(-options.cropY * newScale);
-        } else {
-            newScale = options.width / originalImageSize.width;
-            newCropHeight = options.height || Math.round(originalImageSize.height * newScale);
-            newWidth = options.width;
+        } else if (typeof options.height !== 'undefined') {
+            // cover
+            newScale = Math.max(options.width / originalImageSize.width, options.height / originalImageSize.height);
+            newWidth = Math.min(options.width, Math.round(originalImageSize.width * newScale));
+            newCropHeight = Math.min(options.height, Math.round(originalImageSize.height * newScale));
             var resizedSize = getScaledImageSize(newScale);
             newLeft = Math.round((newWidth - resizedSize.width) / 2);
             newTop = Math.round((newCropHeight - resizedSize.height) / 2);
+        } else if (typeof options.width) {
+            // resize
+            newScale = options.width / originalImageSize.width;
+            newCropHeight = Math.round(originalImageSize.height * newScale);
+            newWidth = options.width;
+            newLeft = 0;
+            newTop = 0;
+        } else {
+            // TODO error reporting unexpected parameters
         }
 
         updateCropperFrameSize(newCropHeight, newWidth);
         updateCropContainerPanZoom(newLeft, newTop, newScale);
+        updateCropperMethod();
     }
 
     function initialize() {
@@ -452,8 +466,7 @@ function mosaicoCropper(imgEl, options, widget) {
 
     var lastMethod;
 
-    function changed() { // n
-        // TODO remove me, this is just log the current resize method
+    function updateCropperMethod() {
         var ccs = getCurrentComputedSizes();
         // console.log("CURRENT METHOD", ccs.method);
         if (lastMethod !== ccs.method) {
@@ -461,7 +474,10 @@ function mosaicoCropper(imgEl, options, widget) {
             lastMethod = ccs.method;
             rootEl.addClass("cropper-method-"+lastMethod);
         }
+    }
 
+    function changed() { // n
+        updateCropperMethod();
         rootEl.addClass("cropper-has-changes");
     }
 
@@ -508,7 +524,7 @@ function mosaicoCropper(imgEl, options, widget) {
         var dx = Math.abs(l-r),
             dy = Math.abs(t-b);
 
-        res.method = options.cropX !== undefined ? 'cropresize' : 'resizecrop';
+        res.method = options.resizeWidth !== undefined ? 'resizecrop' : 'cropresize';
         if (dx <= 1 && dy <= 1 && (l === 0 || t === 0)) {
             if (l === 0 && t === 0) res.method = cropModel.scale !== 1 ? 'resize' : 'original';
             else res.method = 'cover';
@@ -517,44 +533,58 @@ function mosaicoCropper(imgEl, options, widget) {
         return res;
     }
 
+
+    var methods = [ 'original', 'resize', 'cover', 'cropresize', 'resizecrop' ];
+
     function generateCurrentUrl() {
         var res = getCurrentComputedSizes();
         res.urlPrefix = options.urlPrefix;
         res.urlPostfix = options.urlPostfix;
         res.urlOriginal = options.urlOriginal;
-        res.cropThenResize = options.cropX !== undefined;
         res.encodedUrlOriginal = encodeURIComponent(options.urlOriginal);
 
         var toSrc = options.urlAdapter.toSrc;
         if (typeof toSrc == 'object') {
-            if (!res.cropThenResize && toSrc.resizeThenCrop) toSrc = toSrc.resizeThenCrop;
-            else toSrc = toSrc.default;
+            for (var i = methods.indexOf(res.method); i < methods.length; i++) {
+                if (typeof toSrc[methods[i]] !== 'undefined') {
+                    toSrc = toSrc[methods[i]];
+                    // console.log("Using method "+methods[i]+" for original method "+res.method+":", toSrc);
+                    break;
+                }
+            }
         }
         if (typeof toSrc == 'string') {
             toSrc = _stringTemplate.bind(undefined, toSrc);
+            // console.log("Mapping method string to function", toSrc);
         }
         return toSrc(res);
     }
 
     function updateOriginalImageSrc(done, fail) { // n
-        var url = generateCurrentUrl();
+        try {
+            var url = generateCurrentUrl();
 
-        rootEl.addClass("cropper-loading");
+            rootEl.addClass("cropper-loading");
 
-        preloadImage(url, function(img, src) {
-            $(imgEl).attr('src', src);
-            // not needed, as we're going to remove the whole element.
-            rootEl.removeClass("cropper-loading");
-            done();
-        }, function(err) {
-            rootEl.removeClass("cropper-loading");
-            rootEl.addClass("cropper-has-changes");
+            preloadImage(url, function(img, src) {
+                $(imgEl).attr('src', src);
+                // not needed, as we're going to remove the whole element.
+                rootEl.removeClass("cropper-loading");
+                done();
+            }, function(err) {
+                rootEl.removeClass("cropper-loading");
+                rootEl.addClass("cropper-has-changes");
+                fail();
+            });
+
+            rootEl.removeClass("cropper-has-changes");
+
+            if (options.imgLoadingClass) $(imgEl).removeClass(options.imgLoadingClass);
+        } catch (error) {
+            console.error("Failed generating final URL", error);
+            // if something gone wrong, call fail callback.
             fail();
-        });
-
-        rootEl.removeClass("cropper-has-changes");
-
-        if (options.imgLoadingClass) $(imgEl).removeClass(options.imgLoadingClass);
+        }
     }
 
     function updateAndDispose() {
@@ -562,6 +592,8 @@ function mosaicoCropper(imgEl, options, widget) {
             closing = true;
             updateOriginalImageSrc(dispose, function() { 
                 // TODO what should we do when saving fails?
+                // TODO logging
+                dispose();
                 closing = false;
             });
         }
