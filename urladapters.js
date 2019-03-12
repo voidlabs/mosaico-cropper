@@ -1,6 +1,7 @@
 var urlAdapters = {
 
 cloudinary: {
+
     // fromSrc: "{urlPrefix:.*/upload}(/x_{cropX},y_{cropY},w_{cropWidth},h_{cropHeight},c_crop/w_{width},h_{height},c_scale|/w_{resizeWidth},h_{resizeHeight},c_scale/x_{offsetX},y_{offsetY},w_{width},h_{height},c_crop|/w_{width}(,h_{height},c_fill)?)?{urlPostfix:/[^/]*}",
     fromSrc: {
         urlPrefix: ".*/upload",
@@ -12,6 +13,22 @@ cloudinary: {
         cover: "{urlPrefix}/w_{width},h_{height},c_fill{urlPostfix}",
         cropresize: "{urlPrefix}/x_{cropX},y_{cropY},w_{cropWidth},h_{cropHeight},c_crop/w_{width},h_{height},c_scale{urlPostfix}",
         resizecrop: "{urlPrefix}/w_{resizeWidth},h_{resizeHeight},c_scale/x_{offsetX},y_{offsetY},w_{width},h_{height},c_crop{urlPostfix}",
+    }
+},
+
+cloudinaryp: {
+    // https://res.cloudinary.com/demo/image/fetch/c_thumb,f_png,g_face,h_80,r_20,w_80/http://upload.wikimedia.org/wikipedia/commons/4/46/Jennifer_Lawrence_at_the_83rd_Academy_Awards.jpg
+    defaultPrefix: "https://res.cloudinary.com/demo/image/fetch",
+    fromSrc: {
+        urlPrefix: ".*/fetch",
+        urlOriginal: "http.*",
+    },
+    toSrc: {
+        original: "{urlPrefix}/{urlOriginal}",
+        resize: "{urlPrefix}/w_{width}/{urlOriginal}",
+        cover: "{urlPrefix}/w_{width},h_{height},c_fill/{urlOriginal}",
+        cropresize: "{urlPrefix}/x_{cropX},y_{cropY},w_{cropWidth},h_{cropHeight},c_crop/w_{width},h_{height},c_scale/{urlOriginal}",
+        resizecrop: "{urlPrefix}/w_{resizeWidth},h_{resizeHeight},c_scale/x_{offsetX},y_{offsetY},w_{width},h_{height},c_crop/{urlOriginal}",
     }
 },
 
@@ -262,6 +279,7 @@ function automaticURLAdapter(el) {
     if (el.classList.contains("sirv")) urlAdapter = urlAdapters.sirv;
     if (el.classList.contains("imagekit")) urlAdapter = urlAdapters.imagekit;
     if (el.classList.contains("cloudinary")) urlAdapter = urlAdapters.cloudinary;
+    if (el.classList.contains("cloudinaryp")) urlAdapter = urlAdapters.cloudinaryp;
     if (el.classList.contains("cloudimage")) urlAdapter = urlAdapters.cloudimage;
     if (el.classList.contains("gumlet")) urlAdapter = urlAdapters.gumlet;
     if (el.classList.contains("uploadcare")) urlAdapter = urlAdapters.uploadcare;
