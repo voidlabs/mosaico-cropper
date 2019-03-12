@@ -482,7 +482,8 @@ function mosaicoCropper(imgEl, options, widget) {
     }
 
     function _stringTemplate(string, obj) {
-        return string.replace(/\{([^[\}]+)\}/g, function(match, contents, offset, input_string) {
+        // if a token is in the {token:something} format, then ":something" is completely ignored
+        return string.replace(/\{([^[\}:]+)(?::[^\}]+)?\}/g, function(match, contents, offset, input_string) {
             if (obj.hasOwnProperty(contents)) {
                 return obj[contents] !== undefined ? obj[contents] : '';
             } else {
@@ -656,7 +657,7 @@ function mosaicoCropper(imgEl, options, widget) {
     // pattern is a pseudo regex where {tokens} are replaced with "[0-9]+" and  {tokens:regex} are replaced with "regex"
     // the matcher remember the tokens names and returns a matching object using named matches, like named capture groups 
     // (named capture groups have been implemented only by ES2018, so we can't use them)
-    function _urlParser(pattern, url) {
+    function _urlParser(pattern, customPatterns, url) {
         var matchNames = [];
         var regex = new RegExp('^'+pattern.replace(/\\.|(\((?!\?[!:=]))|\{([^:\}]+)(?::([^\}]+))?\}/g, function(match, braket, groupName, subPattern, offset, input_string) {
             // console.log("X", match, braket, groupName, subPattern, offset, input_string);
@@ -667,6 +668,10 @@ function mosaicoCropper(imgEl, options, widget) {
             } else if (groupName) {
                 // named group
                 matchNames.push(groupName);
+                if (!subPattern) {
+                    if (_urlParserPatterns[groupName]) subPattern = _urlParserPatterns[groupName];
+                    else if (customPatterns !== undefined && customPatterns[groupName]) subPattern = customPatterns[groupName];
+                }
                 if (subPattern) {
                     // deal with sub patterns matching groups
                     subPattern.replace(/\\.|(\((?!\?[!:=]))/g, function(innerMatch, innerBraket) {
@@ -675,8 +680,13 @@ function mosaicoCropper(imgEl, options, widget) {
                     });
                     return '('+subPattern+')';
                 // encodedUrlOriginal may not have "http://" prefix
-                } else if (_urlParserPatterns[groupName]) return '('+_urlParserPatterns[groupName]+')';
-                else throw "Uknown token "+groupName+", please use {"+groupName+":regex} or use a known pattern";
+                }
+                // else if (_urlParserPatterns[groupName]) return '('+_urlParserPatterns[groupName]+')';
+                // else if (customPatterns !== undefined && customPatterns[groupName]) return '('+customPatterns[groupName]+')';
+                else {
+                    console.error(pattern, url, customPatterns);
+                    throw "Uknown token "+groupName+", please use {"+groupName+":regex} or use a known pattern";
+                }
             } else {
                 // escaped char
                 return match;
@@ -709,8 +719,19 @@ function mosaicoCropper(imgEl, options, widget) {
     if (options.imgLoadingClass) $(imgEl).addClass(options.imgLoadingClass);
 
     var fromSrc = options.urlAdapter.fromSrc;
+    if (typeof fromSrc == 'object') {
+        var toSrc = options.urlAdapter.toSrc;
+        var patterns = [];
+        for (var p in toSrc) if (toSrc.hasOwnProperty(p)) {
+            // escaping regexp special chars, excluding {} that we use for tokens.
+            patterns.push(toSrc[p].replace(/[.*+?^$()|[\]\\]/g, '\\$&'));
+        }
+        var composedPattern = "("+patterns.join("|")+")";
+        var origFromSrc = fromSrc;
+        fromSrc = _urlParser.bind(undefined, composedPattern, origFromSrc);
+    }
     if (typeof fromSrc == 'string') {
-        fromSrc = _urlParser.bind(undefined, fromSrc);
+        fromSrc = _urlParser.bind(undefined, fromSrc, undefined);
     }
     var urlAdapterResult = fromSrc(imgEl.src);
 
@@ -770,7 +791,6 @@ function mosaicoCropper(imgEl, options, widget) {
         initialize();
     }, function(src) {
         // TODO handle initialization error
-        console.error("TODO Autodispose?");
         setTimeout(dispose);
     });
 
