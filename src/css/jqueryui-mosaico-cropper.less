@@ -5,7 +5,7 @@
     line-height: 16px;
     outline: none; /* prevent focus outline */
     box-shadow: 0px 0px 1px rgba(0,0,0,.2);
-    
+
     * {
         box-sizing: border-box;
     }
@@ -242,6 +242,10 @@
 
         flex: 0 0 30px;
         max-width: 30px; /* ie10/11 fix */
+
+        &:hover {
+            background-color: rgba(128,128,128,.5);
+        }
     }
 
     &.cropper-method-cover .tool-zoom .fa:before {
@@ -256,7 +260,4 @@
       -webkit-animation: fa-spin 2s infinite linear;
       animation: fa-spin 2s infinite linear;
     }
-
-
-
 }
