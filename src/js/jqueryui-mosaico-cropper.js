@@ -216,31 +216,32 @@ function mosaicoCropper(imgEl, options, widget) {
         } else return false;
     }
 
-    function updateCropHeightInternal(newHeight, origHeight, originalOuterTop, maxHeight) {
+    function updateCropHeightInternal(method, newHeight, origHeight, originalOuterTop, maxHeight) {
         // Containment. An alternative to "containment" would be auto-zooming when reaching the maxHeight (but de-zooming would be counter-intuitive)
         if (!options.autoZoom && newHeight > maxHeight) newHeight = maxHeight;
 
         newHeight = Math.round(newHeight);
 
-        // Crop using vertical centering
-        var newOuterTop = Math.round((newHeight - origHeight) / 2) + originalOuterTop;
-        if (newOuterTop > 0) newOuterTop = 0;
-
         updateCropperFrameSize(newHeight);
 
-        // Optional code to let the scale to be updated
-        var newScale = getScale();
-        if (newHeight > maxHeight) {
-            newScale = newHeight / originalImageSize.height;
+        // If we are in a "basic" manipulation we want to be sure we stai in "cover" mode instead of cropresize.
+        if (method == 'original' || method == 'cover' || method == 'resize') {
+            updatePanZoomToFitCropContainer();
+        // This deal with autozoom.
+        } else if (newHeight > maxHeight) {
+            var newScale = newHeight / originalImageSize.height;
             updateScale(newScale);
         } else {
+            // Crop using vertical centering
+            var newOuterTop = Math.round((newHeight - origHeight) / 2) + originalOuterTop;
+            if (newOuterTop > 0) newOuterTop = 0;
             updateCropContainerPanZoom(undefined, newOuterTop);
         }
     }
 
     function updateCropHeight(newHeight) {
         var origHeight = cropModel.crop.height;
-        updateCropHeightInternal(newHeight, origHeight, cropModel.container.top, getScaledImageSize().height);
+        updateCropHeightInternal(getCurrentComputedSizes().method, newHeight, origHeight, cropModel.container.top, getScaledImageSize().height);
         return origHeight !== cropModel.crop.height;
     }
 
@@ -269,6 +270,7 @@ function mosaicoCropper(imgEl, options, widget) {
     function initializeResizer() { // g
         var originalOuterTop;
         var maxHeight;
+        var originalMethod;
         cropperFrameEl.resizable({
             minHeight: 40,
             handles: { s: '.clip-handle' },
@@ -277,6 +279,7 @@ function mosaicoCropper(imgEl, options, widget) {
                 rootEl.focus();
                 addMovingClass('handle');
                 originalOuterTop = cropModel.container.top;
+                originalMethod = getCurrentComputedSizes().method;
                 maxHeight = getScaledImageSize().height;
             },
             stop: function(event, ui) {
@@ -284,11 +287,15 @@ function mosaicoCropper(imgEl, options, widget) {
                 changed("resized");
             },
             resize: function(event, ui) {
-                updateCropHeightInternal(ui.size.height, ui.originalSize.height, originalOuterTop, maxHeight);
+                updateCropHeightInternal(originalMethod, ui.size.height, ui.originalSize.height, originalOuterTop, maxHeight);
                 changed("resizing");
                 ui.size.height = cropModel.crop.height;
                 if (typeof widget !== 'undefined') widget._trigger('cropheight', null, { value: cropModel.crop.height });
             },
+        });
+        cropperFrameEl.find('.clip-handle').on("dblclick", function(event) {
+            updateCropHeight(getScaledImageSize().height);
+            return false;
         });
     }
 
@@ -333,6 +340,7 @@ function mosaicoCropper(imgEl, options, widget) {
         }).on("dblclick", function(event) {
             // TODO temporary added the functionality to doubleclick
             updateSmartAutoResize();
+            return false;
         }).on("click", function(event) {
             rootEl.focus();
             toggleMovingClass('click');
