@@ -91,7 +91,7 @@ $(function() {
 
 <h1>imagekit</h1>
 
-<img class="croppable-image imagekit" src="https://ik.imagekit.io/demo/tr:w-472,h-638:w-200,h-310,cm-extract,x-127,y-256/img/plant.jpeg">
+<img class="croppable-image imagekit" src="https://ik.imagekit.io/demo/tr:w-472,h-638:w-200,h-310,cm-extract,x-127,y-256,fo-top_left/img/plant.jpeg">
 <img class="croppable-image imagekit" src="https://ik.imagekit.io/demo/tr:w-200/medium_cafe_B1iTdD0C.jpg">
 
 <h1>cloudimage</h1>
@@ -144,21 +144,41 @@ $(function() {
 <h1>wnimageproxy(willnorris)</h1>
 <img class="croppable-image wnimageproxy" src="https://willnorris.com/api/imageproxy/300x/https://willnorris.com/2013/12/small-things.jpg">
 <img class="croppable-image wnimageproxy" src="https://willnorris.com/api/imageproxy/300x200/https://willnorris.com/2015/05/material-animations.gif">
-<img class="croppable-image wnimageproxy" src="https://willnorris.com/api/imageproxy/cx780,cy383,cw500,ch300,300x180/https://willnorris.com/2006/02/los-angeles-skyline.jpg">
+<img class="croppable-image wnimageproxy" src="https://willnorris.com/api/imageproxy/cx437,cy76,cw1427,ch656,300x138/https://willnorris.com/2016/02/moon/moon.jpg">
 
 <h1>imaginary(pimmr)</h1>
 <img class="croppable-image imaginary" src="https://static.pimmr.me/resize?width=300&nocrop=true&url=https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/33-1.jpeg">
 <img class="croppable-image imaginary" src="https://static.pimmr.me/resize?width=300&height=100&url=https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/GettyImages-74439287.jpg">
 <img class="croppable-image imaginary" src="https://static.pimmr.me/extract?width=1255&height=706&left=924&top=506&areawidth=300&areaheight=200&url=https%3A%2F%2Fs3.eu-central-1.amazonaws.com%2Fsasapost-media%2Fwp-content%2Fuploads%2F20180630140808%2F31785956755_fdd21edec0_o.jpg">
 
-<h1>demo open proxies cloudimage/thumbor/weserve</h1>
-<img class="croppable-image cloudimage" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
-<img class="croppable-image thumbor" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
+<h1>imageflow(zzr)</h1>
+<img class="croppable-image imageflow" src="https://z.zr.io/ri/zermatt.jpg;w=300">
+<img class="croppable-image imageflow" src="https://z.zr.io/ri/zermatt.jpg;w=300;h=100;mode=crop;scale=both">
+<img class="croppable-image imageflow" src="https://z.zr.io/ri/zermatt.jpg;crop=700,100,1300,700;w=300;h=300;mode=crop;scale=both">
+
+<h1>cimage</h1>
+<img class="croppable-image cimage" src="https://cimage.se/cimage/imgd.php?src=example/kodim13.png&w=300">
+<img class="croppable-image cimage" src="https://cimage.se/cimage/imgd.php?src=example/kodim13.png&w=300&h=100&crop-to-fit">
+<img class="croppable-image cimage" src="https://cimage.se/image/example/kodim04.png?crop=225,92,181,298&w=300">
+
+<h1>glide(herokudemo)</h1>
+<img class="croppable-image glide" src="https://glide.herokuapp.com/1.0/kayaks.jpg?w=300">
+<img class="croppable-image glide" src="https://glide.herokuapp.com/1.0/kayaks.jpg?w=300&h=100&fit=crop">
+<img class="croppable-image glide" src="https://glide.herokuapp.com/1.0/kayaks.jpg?crop=122,81,1750,1315&w=200&h=133&fit=crop">
+
+<h1>free open proxies weservnl</h1>
 <img class="croppable-image weservenl" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
 
-<h1>limited proxies gumlet(ourdemo)/wnimageproxy(willnorris)/imaginary(pimmr)</h1>
+<h1>demo open proxies cloudinaryp/cloudimage/thumbor</h1>
+<img class="croppable-image cloudinaryp" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
+<img class="croppable-image cloudimage" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
+<img class="croppable-image thumbor" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
+
+<h1>limited proxies wnimageproxy(willnorris)/imaginary(pimmr)</h1>
+<!-- removed as they have some cookie/session protection resulting in errors
 <img class="croppable-image gumlet" src="https://d19lgisewk9l6l.cloudfront.net/assetbank/Northern_Lights_at_Jokulsarlon_Glacier_Lagoon_Iceland_240127.jpg" width="300">
-<img class="croppable-image wnimageproxy" src="https://willnorris.com/2006/02/los-angeles-skyline.jpg" width="300">
+-->
+<img class="croppable-image wnimageproxy" src="https://willnorris.com/2016/02/moon/moon.jpg" width="300">
 <img class="croppable-image imaginary" src="https://s3.eu-central-1.amazonaws.com/sasapost/wp-content/uploads/GettyImages-74439287.jpg" width="300">
 
 <hr />
