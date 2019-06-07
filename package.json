@@ -22,7 +22,7 @@
   "homepage": "https://github.com/voidlabs/mosaico-cropper",
   "bugs": "https://github.com/voidlabs/mosaico-cropper/issues",
   "dependencies": {
-    "jquery": "^3.3.1",
+    "jquery": "^3.4.1",
     "jquery-ui-package": "1.11.4",
     "jquery-ui-touch-punch": "^0.2.3"
   },
@@ -30,12 +30,12 @@
     "autoprefixer": "9.4.9",
     "connect-livereload": "^0.6.1",
     "csswring": "6.0.3",
-    "express": "^4.16.4",
+    "express": "^4.17.1",
     "gm": "^1.23.1",
     "got": "^9.6.0",
-    "grunt": "^1.0.3",
+    "grunt": "^1.0.4",
     "grunt-contrib-clean": "2.0.0",
-    "grunt-contrib-compress": "^1.4.3",
+    "grunt-contrib-compress": "^1.5.0",
     "grunt-contrib-jshint": "2.0.0",
     "grunt-contrib-less": "2.0.0",
     "grunt-contrib-uglify": "4.0.0",
@@ -47,5 +47,12 @@
     "jshint-stylish": "2.2.1",
     "load-grunt-tasks": "^4.0.0",
     "lodash": "4.17.11"
+  },
+  "resolutions": {
+    "superagent": "^1.8.3"
+  },
+  "scripts": {
+    "start": "grunt",
+    "lockdeps": "npx npm-force-resolutions"
   }
 }
