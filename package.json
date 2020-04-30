@@ -22,7 +22,7 @@
   "homepage": "https://github.com/voidlabs/mosaico-cropper",
   "bugs": "https://github.com/voidlabs/mosaico-cropper/issues",
   "dependencies": {
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.0",
     "jquery-ui-package": "1.11.4",
     "jquery-ui-touch-punch": "^0.2.3"
   },
