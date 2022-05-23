@@ -42,13 +42,13 @@ function mosaicoCropper(imgEl, options, widget) {
       '<div class="cropper-frame">'+
         '<div class="clipping-container">'+
           '<div class="toolbar">'+
-          '<div class="tool tool-zoom"><i class="fa fa-compress" aria-hidden="true"></i></div>'+
-          '<div class="copper-zoom-slider"></div>'+
-          '<div class="tool tool-crop"><i class="fa fa-check" aria-hidden="true"></i></div>'+
+            '<div class="tool tool-zoom"><i class="fa fa-compress" aria-hidden="true"></i></div>'+
+            '<div class="copper-zoom-slider"></div>'+
+            '<div class="tool tool-crop"><i class="fa fa-check" aria-hidden="true"></i></div>'+
           '</div>'+
           '<img draggable="false" class="clipped clipped-image original-src">'+
         '</div>'+
-        '<div class="clip-handle ui-resizable-s"></div>'+
+        // '<div class="clip-handle ui-resizable-s"></div>'+
       '</div>'+
       '<div class="outer-image-container">'+
         '<img class="outer-image original-src">'+
@@ -139,6 +139,7 @@ function mosaicoCropper(imgEl, options, widget) {
         cropperFrameEl.css({ height: cropModel.crop.height+"px", width: cropModel.crop.width+"px" });
 
         // Compute new minScale
+        // TODO options.width should not be used here
         var widthRatio = options.width / originalImageSize.width,
             heightRatio = cropModel.crop.height / originalImageSize.height,
             minScale = Math.max(widthRatio, heightRatio);
@@ -224,7 +225,7 @@ function mosaicoCropper(imgEl, options, widget) {
 
         updateCropperFrameSize(newHeight);
 
-        // If we are in a "basic" manipulation we want to be sure we stai in "cover" mode instead of cropresize.
+        // If we are in a "basic" manipulation we want to be sure we stay in "cover" mode instead of cropresize.
         if (method == 'original' || method == 'cover' || method == 'resize') {
             updatePanZoomToFitCropContainer();
         // This deal with autozoom.
@@ -241,7 +242,7 @@ function mosaicoCropper(imgEl, options, widget) {
 
     function updateCropHeight(newHeight) {
         var origHeight = cropModel.crop.height;
-        updateCropHeightInternal(getCurrentComputedSizes().method, newHeight, origHeight, cropModel.container.top, getScaledImageSize().height);
+        updateCropHeightInternal(getCurrentComputedMethod(), newHeight, origHeight, cropModel.container.top, getScaledImageSize().height);
         return origHeight !== cropModel.crop.height;
     }
 
@@ -257,6 +258,7 @@ function mosaicoCropper(imgEl, options, widget) {
     function updateSmartAutoResize() {
         var done = updatePanZoomToFitCropContainer();
         if (!done) {
+            // TODO: This step should be available only when resizer is available.
             done = updatePanZoomCropToFitWidthAndAspect();
             if (!done) {
                 updateScale(1);
@@ -267,10 +269,13 @@ function mosaicoCropper(imgEl, options, widget) {
 
     /** INITIALIZATION METHODS */
 
+    // TODO make this method parametrizable so to take a direction (down vs right)
     function initializeResizer() { // g
         var originalOuterTop;
         var maxHeight;
         var originalMethod;
+
+        cropperFrameEl.append('<div class="clip-handle ui-resizable-s"></div>');
         cropperFrameEl.resizable({
             minHeight: 40,
             handles: { s: '.clip-handle' },
@@ -279,7 +284,7 @@ function mosaicoCropper(imgEl, options, widget) {
                 rootEl.focus();
                 addMovingClass('handle');
                 originalOuterTop = cropModel.container.top;
-                originalMethod = getCurrentComputedSizes().method;
+                originalMethod = getCurrentComputedMethod();
                 maxHeight = getScaledImageSize().height;
             },
             stop: function(event, ui) {
@@ -287,6 +292,7 @@ function mosaicoCropper(imgEl, options, widget) {
                 changed("resized");
             },
             resize: function(event, ui) {
+                var topDiff = cropModel.container.top - originalOuterTop;
                 updateCropHeightInternal(originalMethod, ui.size.height, ui.originalSize.height, originalOuterTop, maxHeight);
                 changed("resizing");
                 ui.size.height = cropModel.crop.height;
@@ -381,6 +387,21 @@ function mosaicoCropper(imgEl, options, widget) {
 
     function initializeSizes() {
         var newCropHeight, newLeft, newTop, newScale, newWidth;
+
+        // resizeWith, resizeHeight, offsetX, offestY, width and height must be manipulated according to "ppp"
+        // crop* instead must not be changed.
+        if (typeof options.ppp !== 'undefined') {
+            // console.log("ppp", options.ppp, options.width, Math.round(options.width / options.ppp));
+            // TODO when ppp is used we should not overwrite input options but only work on internal variables
+            // but some code still reads input options.
+            options.width = Math.round(options.width / options.ppp);
+            if (typeof options.height !== 'undefined') options.height = Math.round(options.height / options.ppp);
+            if (typeof options.resizeWidth !== 'undefined') options.resizeWidth = Math.round(options.resizeWidth / options.ppp);
+            if (typeof options.resizeHeight !== 'undefined') options.resizeHeight = Math.round(options.resizeHeight / options.ppp);
+            if (typeof options.offsetX !== 'undefined') options.offsetX = Math.round(options.offsetX / options.ppp);
+            if (typeof options.offsetY !== 'undefined') options.offsetY = Math.round(options.offsetY / options.ppp);
+        }
+
         if (typeof options.resizeWidth !== 'undefined') {
             // resizecrop
             newScale = options.resizeWidth / originalImageSize.width;
@@ -449,6 +470,7 @@ function mosaicoCropper(imgEl, options, widget) {
         rootEl.focus();
 
         initializeSizes();
+        // TODO parametrize vertical resizer presence (note that also the zoom button is currently allowed to change the cropHeight and should be changed according to the presence of the cropper)
         initializeResizer();
         initializeDraggable();
         initializeSlider();
@@ -467,11 +489,11 @@ function mosaicoCropper(imgEl, options, widget) {
     var lastMethod;
 
     function updateCropperMethod() {
-        var ccs = getCurrentComputedSizes();
+        var ccsMethod = getCurrentComputedMethod();
         // console.log("CURRENT METHOD", ccs.method);
-        if (lastMethod !== ccs.method) {
+        if (lastMethod !== ccsMethod) {
             rootEl.removeClass("cropper-method-"+lastMethod);
-            lastMethod = ccs.method;
+            lastMethod = ccsMethod;
             rootEl.addClass("cropper-method-"+lastMethod);
         }
     }
@@ -492,25 +514,41 @@ function mosaicoCropper(imgEl, options, widget) {
         });
     }
 
+    function getCurrentComputedMethod() {
+        return getCurrentComputedSizes().method;
+    }
+
     function getCurrentComputedSizes() {
         var scaledSize = getScaledImageSize();
 
+        var width = scaledSize.width,
+            height = scaledSize.height,
+            scale = cropModel.scale;
+
         var l = -cropModel.container.left,
-            r = scaledSize.width - cropModel.crop.width + cropModel.container.left,
+            r = width - cropModel.crop.width + cropModel.container.left,
             t = -cropModel.container.top,
-            b = scaledSize.height - cropModel.crop.height + cropModel.container.top;
+            b = height - cropModel.crop.height + cropModel.container.top;
+
+
+        // TODO should get this from an option, but maybe not the way 
+        var ppp = 1;
+        if (typeof options.ppp !== 'undefined') ppp = options.ppp;
+        // TODO we should support non integer ppps too.
+        if (ppp * scale > 1) ppp = Math.ceil(1 / scale);
 
         var res = {
-            resizeWidth: scaledSize.width,
-            resizeHeight: scaledSize.height,
-            offsetX: Math.max(0, -cropModel.container.left),
-            offsetY: Math.max(0, -cropModel.container.top),
-            cropX: Math.max(0, Math.round(l / cropModel.scale)),
-            cropY: Math.max(0, Math.round(t / cropModel.scale)),
-            cropWidth: Math.round(cropModel.crop.width / cropModel.scale),
-            cropHeight: Math.round(cropModel.crop.height / cropModel.scale),            
-            width: cropModel.crop.width,
-            height: cropModel.crop.height
+            resizeWidth: Math.round(width * ppp),
+            resizeHeight: Math.round(height * ppp),
+            offsetX: Math.round(Math.max(0, -cropModel.container.left) * ppp),
+            offsetY: Math.round(Math.max(0, -cropModel.container.top) * ppp),
+            cropX: Math.max(0, Math.round(l / scale)),
+            cropY: Math.max(0, Math.round(t / scale)),
+            cropWidth: Math.round(cropModel.crop.width / scale),
+            cropHeight: Math.round(cropModel.crop.height / scale),
+            width: Math.round(cropModel.crop.width * ppp),
+            height: Math.round(cropModel.crop.height * ppp),
+            _scale: scale
         };
 
         res.cropX2 = res.cropX + res.cropWidth;
@@ -527,7 +565,7 @@ function mosaicoCropper(imgEl, options, widget) {
 
         res.method = options.resizeWidth !== undefined ? 'resizecrop' : 'cropresize';
         if (dx <= 1 && dy <= 1 && (l === 0 || t === 0)) {
-            if (l === 0 && t === 0) res.method = cropModel.scale !== 1 ? 'resize' : 'original';
+            if (l === 0 && t === 0) res.method = scale !== 1 ? 'resize' : 'original';
             else res.method = 'cover';
         }
 
@@ -539,6 +577,10 @@ function mosaicoCropper(imgEl, options, widget) {
 
     function generateCurrentUrl() {
         var res = getCurrentComputedSizes();
+
+        // TODO TEMP
+        // console.log("computedSize", res.method, res._scale, res);
+
         res.urlPrefix = options.urlPrefix;
         res.urlPostfix = options.urlPostfix;
         res.urlOriginal = options.urlOriginal;
@@ -607,6 +649,7 @@ function mosaicoCropper(imgEl, options, widget) {
         if (containerEl) containerEl.removeClass("cropper-cropping");
 
         try {
+            cropperFrameEl.find('.clip-handle').remove();
             cropperFrameEl.resizable("destroy");
             imageCropContainerEl.draggable("destroy");
             sliderEl.slider("destroy");
@@ -699,7 +742,7 @@ function mosaicoCropper(imgEl, options, widget) {
         if (res !== null) {
             if (res.length !== matchNames.length + 1) {
                 // TODO improve error reporting
-                console.log("ERROR parsing pattern!", pattern, matchNames, res);
+                console.log("ERROR parsing image url according to pattern!", pattern, matchNames, res);
             }
             matches = {};
             for (var i = 0; i < matchNames.length; i++) {
@@ -715,7 +758,7 @@ function mosaicoCropper(imgEl, options, widget) {
 
     var rootEl = $(htmlTemplate);
 
-    $(imgEl).after(rootEl);
+    $(imgEl).before(rootEl);
     if (options.imgLoadingClass) $(imgEl).addClass(options.imgLoadingClass);
 
     var fromSrc = options.urlAdapter.fromSrc;
@@ -750,9 +793,20 @@ function mosaicoCropper(imgEl, options, widget) {
 
     $.extend(options, urlAdapterResult);
     if (!options.width) {
+        // TODO maybe I have to use the original size instead of the options
         options.width = imgEl.width;
         options.height = imgEl.height;
     }
+
+    // TODO we only support 1:1 aspect ratios.
+    var wr = options.width / imgEl.width;
+    var hr = options.height ? options.height / imgEl.height : wr;
+    if (Math.abs(wr / hr - 1) > 0.01) {
+        console.error("Unexpected aspect ratio: ", options.width, options.height, imgEl.width, imgEl.height, wr, hr);
+    }
+    // image pixels per image "html" size (so to support 2x 3x retina crops)
+    options.ppp = wr;
+
 
     var thisVar = this,
         clippedEl = rootEl.find(".clipped"),

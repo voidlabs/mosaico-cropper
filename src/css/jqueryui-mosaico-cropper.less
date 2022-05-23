@@ -33,10 +33,18 @@
 
     .outer-image-container {
         position: absolute;
-        opacity: .3;
+        opacity: .1;
+        transition-property: opacity;
+        transition-duration: .5s;
         left: 0;
         top: 0;
         cursor: move;
+        &:hover {
+            opacity: .25;
+        }
+    }
+    &.cropper-moving .outer-image-container {
+        opacity: .4;
     }
 
     &.cropper-loading .outer-image-container {
