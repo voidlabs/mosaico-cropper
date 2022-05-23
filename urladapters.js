@@ -120,10 +120,11 @@ weservenl: {
     fromSrc: {
         urlPrefix: "https?://[^/]*/",
     },
+    // TODO "&precrop" should force weserve to crop before resizing, so we could suport cropresize.
     toSrc: {
         resize: "{urlPrefix}?w={width}&url={encodedUrlOriginal}",
         cover: "{urlPrefix}?w={width}&h={height}&t=square&url={encodedUrlOriginal}",
-        resizecrop: "{urlPrefix}?w={resizeWidth}&h={resizeHeight}&t=fitup&crop={width},{height},{offsetX},{offsetY}&url={encodedUrlOriginal}",
+        resizecrop: "{urlPrefix}?w={resizeWidth}&t=fitup&crop={width},{height},{offsetX},{offsetY}&url={encodedUrlOriginal}",
     }
 },
 
