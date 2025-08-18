@@ -27,27 +27,20 @@
     "jquery-ui-touch-punch": "^0.2.3"
   },
   "devDependencies": {
-    "@lodder/grunt-postcss": "3.1.1",
+    "@eslint/js": "^9.33.0",
     "autoprefixer": "10.4.5",
+    "concurrently": "^9.1.0",
     "connect-livereload": "^0.6.1",
+    "cssnano": "^7.1.0",
+    "eslint": "^9.33.0",
     "express": "^4.18.0",
+    "globals": "^16.3.0",
     "gm": "^1.23.1",
-    "got": "^9.6.0",
-    "grunt": "^1.5.3",
-    "grunt-contrib-clean": "2.0.1",
-    "grunt-contrib-compress": "^2.0.0",
-    "grunt-contrib-jshint": "3.2.0",
-    "grunt-contrib-less": "3.0.0",
-    "grunt-contrib-uglify": "5.2.1",
-    "grunt-contrib-watch": "1.1.0",
-    "grunt-express-server": "^0.5.4",
-    "grunt-keepalive": "^1.0.0",
-    "grunt-release": "0.13.1",
-    "jshint-stylish": "2.2.1",
-    "load-grunt-tasks": "^5.1.0",
-    "lodash": "4.17.21",
-    "postcss": "8.4.12",
-    "postcss-minify": "^1.1.0"
+    "got": "^14.4.7",
+    "less": "^4.4.0",
+    "postcss": "^8.5.6",
+    "terser": "^5.43.1",
+    "vite": "^7.1.2"
   },
   "overrides": {
     "async": "3.2.3",
@@ -62,8 +55,14 @@
     "IE 10",
     "IE 11"
   ],
+  "type": "module",
   "scripts": {
-    "start": "grunt",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "dev": "vite",
+    "build": "npm run lint && vite build",
+    "preview": "vite preview",
+    "start": "concurrently \"npm run dev\" \"node backend/main.js\"",
     "lockdeps": "npx npm-force-resolutions"
   }
 }
