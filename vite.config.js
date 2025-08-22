@@ -37,7 +37,11 @@ export default defineConfig({
     postcss: {
       plugins: [
         autoprefixer(),
-        cssnano()
+        cssnano({
+          preset: ['default', {
+            normalizeCharset: false  // Preserve @charset directive
+          }]
+        })
       ]
     },
     devSourcemap: true
