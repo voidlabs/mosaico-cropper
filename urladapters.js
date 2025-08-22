@@ -208,7 +208,7 @@ mosaico: {
     defaultPrefix: '/img',
     // fromSrc: "{urlPrefix:https?://[^/]*/img}\\?method=(cropresize&params={cropWidth},{cropHeight},{cropX},{cropY},{width},{height}|cover&params={width},{height}|resize&params={width})&url={encodedUrlOriginal}",
     fromSrc: {
-        urlPrefix: "https?://[^/]*/img",
+        urlPrefix: "(?:https?://[^/]*)?/img",
     },
     toSrc: {
         resize: "{urlPrefix}?method=resize&params={width}&url={encodedUrlOriginal}",
@@ -293,4 +293,9 @@ function automaticURLAdapter(el) {
     if (el.classList.contains("cimage")) urlAdapter = urlAdapters.cimage;
     if (el.classList.contains("glide")) urlAdapter = urlAdapters.glide;
     return urlAdapter;
+}
+
+// Make globals available for testing purposes
+if (typeof globalThis !== 'undefined') {
+    globalThis.urlAdapters = urlAdapters;
 }
