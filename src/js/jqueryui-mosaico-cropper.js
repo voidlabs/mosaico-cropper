@@ -575,18 +575,17 @@ function mosaicoCropper(imgEl, options, widget) {
 
     var methods = [ 'original', 'resize', 'cover', 'cropresize', 'resizecrop' ];
 
-    function generateCurrentUrl() {
-        var res = getCurrentComputedSizes();
+    function _urlAdapterToSrc(urlAdapter, urlData, res) {
 
         // TODO TEMP
         // console.log("computedSize", res.method, res._scale, res);
 
-        res.urlPrefix = options.urlPrefix;
-        res.urlPostfix = options.urlPostfix;
-        res.urlOriginal = options.urlOriginal;
-        res.encodedUrlOriginal = encodeURIComponent(options.urlOriginal);
+        res.urlPrefix = urlData.urlPrefix;
+        res.urlPostfix = urlData.urlPostfix;
+        res.urlOriginal = urlData.urlOriginal;
+        res.encodedUrlOriginal = encodeURIComponent(urlData.urlOriginal);
 
-        var toSrc = options.urlAdapter.toSrc;
+        var toSrc = urlAdapter.toSrc;
         if (typeof toSrc == 'object') {
             for (var i = methods.indexOf(res.method); i < methods.length; i++) {
                 if (typeof toSrc[methods[i]] !== 'undefined') {
@@ -605,7 +604,8 @@ function mosaicoCropper(imgEl, options, widget) {
 
     function updateOriginalImageSrc(done, fail) { // n
         try {
-            var url = generateCurrentUrl();
+            var res = getCurrentComputedSizes();
+            var url = _urlAdapterToSrc(options.urlAdapter, options, res);
 
             rootEl.addClass("cropper-loading");
 
@@ -755,43 +755,48 @@ function mosaicoCropper(imgEl, options, widget) {
         return matches;
     }
 
+    function _urlAdapterFromSrc(urlAdapter, urlData, src) {
+      var fromSrc = urlAdapter.fromSrc;
+      if (typeof fromSrc == 'object') {
+          var toSrc = urlAdapter.toSrc;
+          var patterns = [];
+          for (var p in toSrc) if (toSrc.hasOwnProperty(p)) {
+              // escaping regexp special chars, excluding {} that we use for tokens.
+              patterns.push(toSrc[p].replace(/[.*+?^$()|[\]\\]/g, '\\$&'));
+          }
+          var composedPattern = "("+patterns.join("|")+")";
+          var origFromSrc = fromSrc;
+          fromSrc = _urlParser.bind(undefined, composedPattern, origFromSrc);
+      }
+      if (typeof fromSrc == 'string') {
+          fromSrc = _urlParser.bind(undefined, fromSrc, undefined);
+      }
+      var urlAdapterResult = fromSrc(src);
+
+      if (!urlAdapterResult) {
+        if (urlAdapter.defaultPrefix !== undefined) {
+            urlData.urlOriginal = src;
+            urlData.urlPrefix = urlAdapter.defaultPrefix;
+            urlData.urlPostfix = src;
+        } else {
+            // TODO handle bad parameters, log it and fails the initialization!
+            console.error("FAILED PARSING", src);
+        }
+      } else if (urlAdapterResult.encodedUrlOriginal) {
+        urlAdapterResult.urlOriginal = decodeURIComponent(urlAdapterResult.encodedUrlOriginal);
+      }
+
+      return urlAdapterResult;
+    }
 
     var rootEl = $(htmlTemplate);
 
     $(imgEl).before(rootEl);
     if (options.imgLoadingClass) $(imgEl).addClass(options.imgLoadingClass);
 
-    var fromSrc = options.urlAdapter.fromSrc;
-    if (typeof fromSrc == 'object') {
-        var toSrc = options.urlAdapter.toSrc;
-        var patterns = [];
-        for (var p in toSrc) if (toSrc.hasOwnProperty(p)) {
-            // escaping regexp special chars, excluding {} that we use for tokens.
-            patterns.push(toSrc[p].replace(/[.*+?^$()|[\]\\]/g, '\\$&'));
-        }
-        var composedPattern = "("+patterns.join("|")+")";
-        var origFromSrc = fromSrc;
-        fromSrc = _urlParser.bind(undefined, composedPattern, origFromSrc);
-    }
-    if (typeof fromSrc == 'string') {
-        fromSrc = _urlParser.bind(undefined, fromSrc, undefined);
-    }
-    var urlAdapterResult = fromSrc(imgEl.src);
+    var urlData = _urlAdapterFromSrc(options.urlAdapter, options, imgEl.src);
 
-    if (!urlAdapterResult) {
-        if (options.urlAdapter.defaultPrefix !== undefined) {
-            options.urlOriginal = imgEl.src;
-            options.urlPrefix = options.urlAdapter.defaultPrefix;
-            options.urlPostfix = imgEl.src;
-        } else {
-            // TODO handle bad parameters, log it and fails the initialization!
-            console.error("FAILED PARSING", imgEl.src);
-        }
-    } else if (urlAdapterResult.encodedUrlOriginal) {
-        urlAdapterResult.urlOriginal = decodeURIComponent(urlAdapterResult.encodedUrlOriginal);
-    }
-
-    $.extend(options, urlAdapterResult);
+    $.extend(options, urlData);
     if (!options.width) {
         // TODO maybe I have to use the original size instead of the options
         options.width = imgEl.width;
