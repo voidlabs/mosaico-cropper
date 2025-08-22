@@ -15,6 +15,7 @@ export default [
       ecmaVersion: 12,
       sourceType: "module",
       globals: {
+        ...globals.node,
         ...globals.browser,
         "jQuery": "readonly",
         "$": "readonly"

@@ -28,6 +28,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "autoprefixer": "10.4.5",
     "concurrently": "^9.1.0",
     "connect-livereload": "^0.6.1",
@@ -37,10 +39,12 @@
     "globals": "^16.3.0",
     "gm": "^1.23.1",
     "got": "^14.4.7",
+    "jsdom": "^26.1.0",
     "less": "^4.4.0",
     "postcss": "^8.5.6",
     "terser": "^5.43.1",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vitest": "^3.2.4"
   },
   "overrides": {
     "async": "3.2.3",
@@ -63,6 +67,10 @@
     "build": "npm run lint && vite build",
     "preview": "vite preview",
     "start": "concurrently \"npm run dev\" \"node backend/main.js\"",
-    "lockdeps": "npx npm-force-resolutions"
+    "lockdeps": "npx npm-force-resolutions",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   }
 }
