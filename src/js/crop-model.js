@@ -2,16 +2,23 @@
  * CropModel - Gestisce lo stato del modello di cropping separato dalla UI
  */
 export class CropModel {
-    constructor(options = {}) {
+    constructor(options = {}, originalImageSize, eventHandlers = {}) {
+        if (!originalImageSize) {
+            throw new Error('CropModel requires originalImageSize parameter');
+        }
+        
         this.state = {
             container: { left: 0, top: 0 },
             crop: { width: 0, height: 0 },
             scale: 1,
             minScale: 0
         };
-        this.originalImageSize = null;
+        this.originalImageSize = originalImageSize;
         this.options = options;
         this.listeners = {};
+        
+        // Setup event handlers if provided
+        this.setupEventHandlers(eventHandlers);
     }
 
     /** EVENT SYSTEM **/
@@ -31,8 +38,22 @@ export class CropModel {
 
     /** INITIALIZATION **/
 
-    setOriginalImageSize(size) {
-        this.originalImageSize = size;
+    setupEventHandlers(eventHandlers) {
+        if (eventHandlers.onScaleChanged) {
+            this.on('scaleChanged', eventHandlers.onScaleChanged);
+        }
+        if (eventHandlers.onContainerPositionChanged) {
+            this.on('containerPositionChanged', eventHandlers.onContainerPositionChanged);
+        }
+        if (eventHandlers.onCropSizeChanged) {
+            this.on('cropSizeChanged', eventHandlers.onCropSizeChanged);
+        }
+        if (eventHandlers.onMinScaleChanged) {
+            this.on('minScaleChanged', eventHandlers.onMinScaleChanged);
+        }
+        if (eventHandlers.onModelUpdated) {
+            this.on('modelUpdated', eventHandlers.onModelUpdated);
+        }
     }
 
     /** GETTERS **/
@@ -51,7 +72,6 @@ export class CropModel {
     }
 
     getScaledImageSize(scale) {
-        if (!this.originalImageSize) return { width: 0, height: 0 };
         return {
             width: Math.round(this.originalImageSize.width * (scale || this.state.scale)),
             height: Math.round(this.originalImageSize.height * (scale || this.state.scale))
@@ -73,8 +93,6 @@ export class CropModel {
     }
 
     getCurrentComputedSizes() {
-        if (!this.originalImageSize) return {};
-        
         var scaledSize = this.getScaledImageSize();
 
         var width = scaledSize.width,
@@ -124,8 +142,6 @@ export class CropModel {
     /** MODEL UPDATE METHODS **/
 
     updateScale(newScale, xp, yp) {
-        if (!this.originalImageSize) return false;
-        
         var scaledSize = this.getScaledImageSize();
         if (xp == undefined) xp = (this.state.crop.width / 2 - this.state.container.left) / scaledSize.width;
         if (yp == undefined) yp = (this.state.crop.height / 2 - this.state.container.top) / scaledSize.height;
@@ -224,8 +240,6 @@ export class CropModel {
     }
 
     updatePanZoomToFitCropContainer() {
-        if (!this.originalImageSize) return false;
-        
         // TODO this code is similar to the initializeSizes, maybe we should merge them.
         var newScale, newLeft, newTop;
         newScale = this.state.minScale;
@@ -265,7 +279,7 @@ export class CropModel {
     }
 
     updatePanZoomCropToFitWidthAndAspect() {
-        if (!this.originalImageSize || !this.options.width) return false;
+        if (!this.options.width) return false;
         
         var newScale = this.options.width / this.originalImageSize.width;
         var newHeight = Math.round(this.originalImageSize.height * newScale);

@@ -4,6 +4,7 @@ import { CropModel } from '../src/js/crop-model.js';
 describe('CropModel', () => {
     let cropModel;
     let mockOptions;
+    let mockOriginalImageSize;
 
     beforeEach(() => {
         mockOptions = {
@@ -11,8 +12,39 @@ describe('CropModel', () => {
             height: 300,
             maxScale: 2
         };
-        cropModel = new CropModel(mockOptions);
-        cropModel.setOriginalImageSize({ width: 800, height: 600 });
+        mockOriginalImageSize = { width: 800, height: 600 };
+        cropModel = new CropModel(mockOptions, mockOriginalImageSize);
+    });
+
+    describe('Constructor', () => {
+        it('should throw error when originalImageSize is not provided', () => {
+            expect(() => {
+                new CropModel(mockOptions);
+            }).toThrow('CropModel requires originalImageSize parameter');
+        });
+
+        it('should setup event handlers when provided', () => {
+            const onScaleChanged = vi.fn();
+            const onCropSizeChanged = vi.fn();
+            
+            const model = new CropModel(mockOptions, mockOriginalImageSize, {
+                onScaleChanged,
+                onCropSizeChanged
+            });
+            
+            // Trigger events to verify handlers are set up
+            model.updateScaledImageSize(1.5);
+            model.updateCropperFrameSize(200, 300);
+            
+            expect(onScaleChanged).toHaveBeenCalledWith({
+                scale: 1.5,
+                scaledSize: { width: 1200, height: 900 }
+            });
+            expect(onCropSizeChanged).toHaveBeenCalledWith({
+                width: 300,
+                height: 200
+            });
+        });
     });
 
     describe('Event System', () => {
@@ -55,7 +87,7 @@ describe('CropModel', () => {
         });
 
         it('should return default max scale when not in options', () => {
-            const model = new CropModel({});
+            const model = new CropModel({}, { width: 100, height: 100 });
             expect(model.getMaxScale()).toBe(2);
         });
 
@@ -225,8 +257,7 @@ describe('CropModel', () => {
 
     describe('initializeSizes', () => {
         it('should initialize with resize mode when only width provided', () => {
-            const model = new CropModel({ width: 400 });
-            model.setOriginalImageSize({ width: 800, height: 600 });
+            const model = new CropModel({ width: 400 }, { width: 800, height: 600 });
             
             model.initializeSizes();
             
@@ -235,8 +266,7 @@ describe('CropModel', () => {
         });
 
         it('should initialize with cover mode when width and height provided', () => {
-            const model = new CropModel({ width: 400, height: 200 });
-            model.setOriginalImageSize({ width: 800, height: 600 });
+            const model = new CropModel({ width: 400, height: 200 }, { width: 800, height: 600 });
             
             model.initializeSizes();
             
@@ -245,8 +275,7 @@ describe('CropModel', () => {
         });
 
         it('should handle ppp (pixels per point) scaling', () => {
-            const model = new CropModel({ width: 800, height: 600, ppp: 2 });
-            model.setOriginalImageSize({ width: 800, height: 600 });
+            const model = new CropModel({ width: 800, height: 600, ppp: 2 }, { width: 800, height: 600 });
             
             model.initializeSizes();
             

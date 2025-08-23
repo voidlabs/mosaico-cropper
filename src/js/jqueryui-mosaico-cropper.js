@@ -475,47 +475,8 @@ function mosaicoCropper(imgEl, options, widget) {
         containerEl = $(options.containerSelector);
     }
 
-    // Initialize the CropModel
-    var cropModel = new CropModel(options);
-
-    /** MODEL EVENT LISTENERS **/
-    function setupModelEventListeners() {
-        // Handle scale changes
-        cropModel.on('scaleChanged', function(data) {
-            var newSizes = {
-                width: data.scaledSize.width+"px",
-                height: data.scaledSize.height+"px"
-            };
-            clippedEl.css(newSizes);
-            imageCropContainerEl.css(newSizes);
-        });
-
-        // Handle container position changes
-        cropModel.on('containerPositionChanged', function(data) {
-            var newSizes = {
-                left: data.left+"px",
-                top: data.top+"px"
-            };
-            imageCropContainerEl.css(newSizes);
-            clippedEl.css(newSizes);
-        });
-
-        // Handle crop size changes
-        cropModel.on('cropSizeChanged', function(data) {
-            cropperFrameEl.css({ 
-                height: data.height+"px", 
-                width: data.width+"px" 
-            });
-            if (data.width !== undefined) {
-                rootEl.css({ width: data.width+"px" });
-            }
-        });
-
-        // Handle min scale changes
-        cropModel.on('minScaleChanged', function(data) {
-            sliderEl.slider({ min: _fromScaleToSliderValue(data.minScale) });
-        });
-    }
+    // CropModel will be initialized later with complete data
+    var cropModel;
 
     var fullOriginalImgUrl = options.urlOriginal || (options.urlPrefix || '')+(options.urlPostfix || '');
 
@@ -529,11 +490,37 @@ function mosaicoCropper(imgEl, options, widget) {
             height: img.naturalHeight
         };
         
-        // Set the original image size in the crop model
-        cropModel.setOriginalImageSize(originalImageSize);
-        
-        // Set up event listeners for model changes
-        setupModelEventListeners();
+        // Initialize the CropModel with complete data and event handlers
+        cropModel = new CropModel(options, originalImageSize, {
+            onScaleChanged: function(data) {
+                var newSizes = {
+                    width: data.scaledSize.width+"px",
+                    height: data.scaledSize.height+"px"
+                };
+                clippedEl.css(newSizes);
+                imageCropContainerEl.css(newSizes);
+            },
+            onContainerPositionChanged: function(data) {
+                var newSizes = {
+                    left: data.left+"px",
+                    top: data.top+"px"
+                };
+                imageCropContainerEl.css(newSizes);
+                clippedEl.css(newSizes);
+            },
+            onCropSizeChanged: function(data) {
+                cropperFrameEl.css({ 
+                    height: data.height+"px", 
+                    width: data.width+"px" 
+                });
+                if (data.width !== undefined) {
+                    rootEl.css({ width: data.width+"px" });
+                }
+            },
+            onMinScaleChanged: function(data) {
+                sliderEl.slider({ min: _fromScaleToSliderValue(data.minScale) });
+            }
+        });
         
         // initialize.call(thisVar);
         initialize();
