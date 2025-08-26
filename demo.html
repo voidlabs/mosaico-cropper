@@ -1,13 +1,29 @@
 <!DOCTYPE html>
-<html charset="UTF-8">
+<html>
 <head>
+<meta charset="UTF-8">
+<title>Mosaico Cropper Demo</title>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
 
-<script type="module" src="/src/index.js"></script>
 <script src="urladapters.js"></script>
+<script type="module">
+  // Import the module and ensure jQuery is available
+  import mosaicoCropper from '/src/index.js';
+  // The module should register the widget on window.jQuery
+  console.log('Mosaico Cropper loaded:', typeof window.jQuery.fn.mosaicoCropper);
+  
+  // Wait a bit for module to load, then check
+  setTimeout(() => {
+    console.log('jQuery version:', $.fn.jquery);
+    console.log('Widget available:', typeof $.fn.mosaicoCropper);
+    if (typeof $.fn.mosaicoCropper === 'undefined') {
+      console.error('Widget not registered! Check imports.');
+    }
+  }, 100);
+</script>
 
 <style>
 .croppable-image:hover {
@@ -188,8 +204,8 @@ $(function() {
 
 
 <hr />
-<div class="cropthemall">crop them all (with no automatic close and shift-wheel</div>
-<div class="closethemall">close them all</div>
+<button class="cropthemall">crop them all (with no automatic close and shift-wheel</button>
+<button class="closethemall">close them all</button>
 </div>
 
 

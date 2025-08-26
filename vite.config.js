@@ -2,8 +2,13 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import autoprefixer from 'autoprefixer';
 import cssnano from 'cssnano';
+import { imageProcessorPlugin } from './vite-plugins/image-processor-plugin.js';
 
 export default defineConfig({
+  plugins: [
+    imageProcessorPlugin()
+  ],
+
   build: {
     outDir: 'dist',
     cssCodeSplit: false,
@@ -11,11 +16,17 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'src/index.js')
       },
+      external: ['jquery', 'jquery-ui-package', 'jquery-ui-touch-punch'],
       output: {
         entryFileNames: 'jqueryui-mosaico-cropper.min.js',
         assetFileNames: 'jqueryui-mosaico-cropper.min.css',
         format: 'umd',
         name: 'mosaicoCropper',
+        globals: {
+          'jquery': 'jQuery',
+          'jquery-ui-package': 'jQuery.ui',
+          'jquery-ui-touch-punch': 'jQuery.ui.touchPunch'
+        }
       }
     },
     minify: 'terser',
@@ -52,9 +63,6 @@ export default defineConfig({
     host: '0.0.0.0',
     watch: {
       usePolling: true
-    },
-    proxy: {
-      '/img': 'http://localhost:9009'
     }
   }
 });
