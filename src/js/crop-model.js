@@ -2,7 +2,7 @@
  * CropModel - Gestisce lo stato del modello di cropping separato dalla UI
  */
 export class CropModel {
-    constructor(options = {}, originalImageSize, eventHandlers = {}) {
+    constructor(options = {}, originalImageSize) {
         if (!originalImageSize) {
             throw new Error('CropModel requires originalImageSize parameter');
         }
@@ -16,9 +16,6 @@ export class CropModel {
         this.originalImageSize = originalImageSize;
         this.options = options;
         this.listeners = {};
-        
-        // Setup event handlers if provided
-        this.setupEventHandlers(eventHandlers);
     }
 
     /** EVENT SYSTEM **/
@@ -33,26 +30,6 @@ export class CropModel {
     emit(event, data) {
         if (this.listeners[event]) {
             this.listeners[event].forEach(callback => callback(data));
-        }
-    }
-
-    /** INITIALIZATION **/
-
-    setupEventHandlers(eventHandlers) {
-        if (eventHandlers.onScaleChanged) {
-            this.on('scaleChanged', eventHandlers.onScaleChanged);
-        }
-        if (eventHandlers.onContainerPositionChanged) {
-            this.on('containerPositionChanged', eventHandlers.onContainerPositionChanged);
-        }
-        if (eventHandlers.onCropSizeChanged) {
-            this.on('cropSizeChanged', eventHandlers.onCropSizeChanged);
-        }
-        if (eventHandlers.onMinScaleChanged) {
-            this.on('minScaleChanged', eventHandlers.onMinScaleChanged);
-        }
-        if (eventHandlers.onModelUpdated) {
-            this.on('modelUpdated', eventHandlers.onModelUpdated);
         }
     }
 

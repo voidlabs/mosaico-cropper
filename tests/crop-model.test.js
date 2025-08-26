@@ -27,10 +27,9 @@ describe('CropModel', () => {
             const onScaleChanged = vi.fn();
             const onCropSizeChanged = vi.fn();
             
-            const model = new CropModel(mockOptions, mockOriginalImageSize, {
-                onScaleChanged,
-                onCropSizeChanged
-            });
+            const model = new CropModel(mockOptions, mockOriginalImageSize);
+            model.on('scaleChanged', onScaleChanged);
+            model.on('cropSizeChanged', onCropSizeChanged);
             
             // Trigger events to verify handlers are set up
             model.updateScaledImageSize(1.5);

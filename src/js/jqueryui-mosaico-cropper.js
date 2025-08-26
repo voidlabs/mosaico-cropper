@@ -113,58 +113,6 @@ function mosaicoCropper(imgEl, options, widget) {
     }
 
 
-    /** DOM UPDATE METHODS **/
-
-    function updateScaledImageSize(newScale) {
-        return cropModel.updateScaledImageSize(newScale);
-    }
-
-    function updateCropperFrameSize(newCropHeight, newCropWidth) {
-        cropModel.updateCropperFrameSize(newCropHeight, newCropWidth);
-    }
-
-    function updateCropContainerPanZoom(newLeft, newTop, newScale, updateCropContainer, updateSlider) {
-        var changed = cropModel.updateCropContainerPanZoom(newLeft, newTop, newScale);
-
-        // Handle UI updates that were previously done here
-        if (changed) {
-            if (newScale && updateSlider !== false) {
-                sliderEl.slider("value", _fromScaleToSliderValue(newScale));
-            }
-        }
-
-        return changed;
-    }
-
-    function updatePanZoomToFitCropContainer() {
-        return cropModel.updatePanZoomToFitCropContainer();
-    }
-
-    function updateScale(newScale, xp, yp, updateSlider) {
-        var result = cropModel.updateScale(newScale, xp, yp);
-        if (result && updateSlider !== false) {
-            sliderEl.slider("value", _fromScaleToSliderValue(cropModel.getScale()));
-        }
-        return result;
-    }
-
-    function updateCropHeightInternal(method, newHeight, origHeight, originalOuterTop, maxHeight) {
-        cropModel.updateCropHeightInternal(method, newHeight, origHeight, originalOuterTop, maxHeight);
-    }
-
-    function updateCropHeight(newHeight) {
-        return cropModel.updateCropHeight(newHeight);
-    }
-
-    function updatePanZoomCropToFitWidthAndAspect() {
-        return cropModel.updatePanZoomCropToFitWidthAndAspect();
-    }
-
-    function updateSmartAutoResize() {
-        cropModel.updateSmartAutoResize();
-        changed("autosize");
-    }
-
     /** INITIALIZATION METHODS */
 
     // TODO make this method parametrizable so to take a direction (down vs right)
@@ -182,8 +130,8 @@ function mosaicoCropper(imgEl, options, widget) {
                 rootEl.focus();
                 addMovingClass('handle');
                 originalOuterTop = cropModel.state.container.top;
-                originalMethod = getCurrentComputedMethod();
-                maxHeight = getScaledImageSize().height;
+                originalMethod = cropModel.getCurrentComputedMethod();
+                maxHeight = cropModel.getScaledImageSize().height;
             },
             stop: function(event, ui) {
                 removeMovingClass();
@@ -191,14 +139,14 @@ function mosaicoCropper(imgEl, options, widget) {
             },
             resize: function(event, ui) {
                 var topDiff = cropModel.state.container.top - originalOuterTop;
-                updateCropHeightInternal(originalMethod, ui.size.height, ui.originalSize.height, originalOuterTop, maxHeight);
+                cropModel.updateCropHeightInternal(originalMethod, ui.size.height, ui.originalSize.height, originalOuterTop, maxHeight);
                 changed("resizing");
                 ui.size.height = cropModel.state.crop.height;
                 if (typeof widget !== 'undefined') widget._trigger('cropheight', null, { value: cropModel.getCropHeight() });
             },
         });
         cropperFrameEl.find('.clip-handle').on("dblclick", function(event) {
-            updateCropHeight(getScaledImageSize().height);
+            cropModel.updateCropHeight(cropModel.getScaledImageSize().height);
             changed("resized");
             return false;
         });
@@ -216,7 +164,7 @@ function mosaicoCropper(imgEl, options, widget) {
                 removeMovingClass();
             },
             drag: function(event, ui) {
-                updateCropContainerPanZoom(Math.round(ui.position.left), Math.round(ui.position.top), undefined, false);
+                cropModel.updateCropContainerPanZoom(Math.round(ui.position.left), Math.round(ui.position.top));
                 ui.position.left = cropModel.state.container.left;
                 ui.position.top = cropModel.state.container.top;
                 changed("dragging");
@@ -231,20 +179,20 @@ function mosaicoCropper(imgEl, options, widget) {
                 addMovingClass('wheel');
                 movingTimeout = setTimeout(removeMovingClass, 500);
 
-                var scaledSize = getScaledImageSize();
+                var scaledSize = cropModel.getScaledImageSize();
                 // console.log(event.originalEvent.layerX, event.originalEvent.offsetX, event.originalEvent.layerX | event.originalEvent.offsetX);
                 var xp = event.originalEvent.offsetX / scaledSize.width;
                 var yp = event.originalEvent.offsetY / scaledSize.height;
 
                 var newScale = delta > 0 ? cropModel.getScale()*1.1 : (cropModel.getScale()/1.1);
-                updateScale(newScale, xp, yp);
+                cropModel.updateScale(newScale, xp, yp);
                 changed("wheel");
             }
 
             return false;
         }).on("dblclick", function(event) {
             // TODO temporary added the functionality to doubleclick
-            updateSmartAutoResize();
+            cropModel.updateSmartAutoResize();
             return false;
         }).on("click", function(event) {
             rootEl.focus();
@@ -267,10 +215,10 @@ function mosaicoCropper(imgEl, options, widget) {
             min: Math.floor(_fromScaleToSliderValue(cropModel.state.minScale)),
             step: 1,
             value: Math.round(_fromScaleToSliderValue(cropModel.getScale())),
-            max: Math.ceil(_fromScaleToSliderValue(getMaxScale())), // zoom 2 means the output image will be very low quality (4 pixels from 1 original pixel)
+            max: Math.ceil(_fromScaleToSliderValue(cropModel.getMaxScale())), // zoom 2 means the output image will be very low quality (4 pixels from 1 original pixel)
             slide: function(event, ui) {
                 var newScale = _fromSliderValueToScale(ui.value);
-                updateScale(newScale, undefined, undefined, false);
+                cropModel.updateScale(newScale);
                 changed("slide");
                 ui.value = _fromScaleToSliderValue(cropModel.getScale());
             },
@@ -281,11 +229,6 @@ function mosaicoCropper(imgEl, options, widget) {
                 removeMovingClass('slide');               
             },
         });
-    }
-
-    function initializeSizes() {
-        cropModel.initializeSizes();
-        updateCropperMethod();
     }
 
     function initialize() {
@@ -307,12 +250,13 @@ function mosaicoCropper(imgEl, options, widget) {
         });
 
         rootEl.find('.tool-zoom').on("click", function() {
-            updateSmartAutoResize();
+            cropModel.updateSmartAutoResize();
         });
 
         rootEl.focus();
 
-        initializeSizes();
+        cropModel.initializeSizes();
+        updateCropperMethod();
         // TODO parametrize vertical resizer presence (note that also the zoom button is currently allowed to change the cropHeight and should be changed according to the presence of the cropper)
         initializeResizer();
         initializeDraggable();
@@ -332,7 +276,7 @@ function mosaicoCropper(imgEl, options, widget) {
     var lastMethod;
 
     function updateCropperMethod() {
-        var ccsMethod = getCurrentComputedMethod();
+        var ccsMethod = cropModel.getCurrentComputedMethod();
         // console.log("CURRENT METHOD", ccs.method);
         if (lastMethod !== ccsMethod) {
             rootEl.removeClass("cropper-method-"+lastMethod);
@@ -490,36 +434,45 @@ function mosaicoCropper(imgEl, options, widget) {
             height: img.naturalHeight
         };
         
-        // Initialize the CropModel with complete data and event handlers
-        cropModel = new CropModel(options, originalImageSize, {
-            onScaleChanged: function(data) {
-                var newSizes = {
-                    width: data.scaledSize.width+"px",
-                    height: data.scaledSize.height+"px"
-                };
-                clippedEl.css(newSizes);
-                imageCropContainerEl.css(newSizes);
-            },
-            onContainerPositionChanged: function(data) {
-                var newSizes = {
-                    left: data.left+"px",
-                    top: data.top+"px"
-                };
-                imageCropContainerEl.css(newSizes);
-                clippedEl.css(newSizes);
-            },
-            onCropSizeChanged: function(data) {
-                cropperFrameEl.css({ 
-                    height: data.height+"px", 
-                    width: data.width+"px" 
-                });
-                if (data.width !== undefined) {
-                    rootEl.css({ width: data.width+"px" });
-                }
-            },
-            onMinScaleChanged: function(data) {
-                sliderEl.slider({ min: _fromScaleToSliderValue(data.minScale) });
+        // Initialize the CropModel with complete data
+        cropModel = new CropModel(options, originalImageSize);
+
+        // Setup event handlers
+        cropModel.on('scaleChanged', function(data) {
+            var newSizes = {
+                width: data.scaledSize.width+"px",
+                height: data.scaledSize.height+"px"
+            };
+            clippedEl.css(newSizes);
+            imageCropContainerEl.css(newSizes);
+            sliderEl.slider("value", _fromScaleToSliderValue(data.scale));
+            changed("scaleChanged");
+        });
+        cropModel.on('containerPositionChanged', function(data) {
+            var newSizes = {
+                left: data.left+"px",
+                top: data.top+"px"
+            };
+            imageCropContainerEl.css(newSizes);
+clippedEl.css(newSizes);
+            changed("containerPositionChanged");
+        });
+        cropModel.on('cropSizeChanged', function(data) {
+            cropperFrameEl.css({ 
+                height: data.height+"px", 
+                width: data.width+"px" 
+            });
+            if (data.width !== undefined) {
+                rootEl.css({ width: data.width+"px" });
             }
+            changed("cropSizeChanged");
+        });
+        cropModel.on('minScaleChanged', function(data) {
+            sliderEl.slider({ min: _fromScaleToSliderValue(data.minScale) });
+            changed("minScaleChanged");
+        });
+        cropModel.on('modelUpdated', function(data) {
+            changed(data.reason);
         });
         
         // initialize.call(thisVar);
@@ -530,10 +483,10 @@ function mosaicoCropper(imgEl, options, widget) {
     });
 
     return {
-        getScale: getScale,
-        updateScale: updateScale,
-        getCropHeight: getCropHeight,
-        updateCropHeight: updateCropHeight,
+        getScale: function() { return cropModel.getScale(); },
+        updateScale: function(value, xp, yp) { return cropModel.updateScale(value, xp, yp); },
+        getCropHeight: function() { return cropModel.getCropHeight(); },
+        updateCropHeight: function(value) { return cropModel.updateCropHeight(value); },
         dispose: dispose,
     };
 
