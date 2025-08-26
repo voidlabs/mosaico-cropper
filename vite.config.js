@@ -48,7 +48,7 @@ export default defineConfig({
   },
   
   server: {
-    port: 9009,
+    port: 9008,
     host: '0.0.0.0',
     watch: {
       usePolling: true
