@@ -1,0 +1,95 @@
+// =============================================================================
+// RESIZE HANDLE COMPONENT
+// =============================================================================
+
+.mo-cropper {
+    .cropper-frame {
+        box-sizing: border-box;
+        position: initial !important; 
+        cursor: move;
+        z-index: 300;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+    }
+
+    .clip-handle, 
+    .vanilla-resizable-s {
+        position: absolute;
+        pointer-events: all;
+        top: 100%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        z-index: 310;
+        cursor: row-resize;
+        margin-top: -10px;
+
+        transition-property: z-index, margin-top;
+        transition-duration: 0.5s, 0.5s;
+
+        &:before {
+            transition-property: background-color, height;
+            transition-duration: 0.2s;
+            content: "";
+            position: relative;
+            display: block;
+            top: 10px;
+            background-color: @cropper-handle-color;
+            box-shadow: 1px 1px 3px @cropper-handle-shadow;
+            left: -25px;
+            width: @cropper-handle-width;
+            height: @cropper-handle-height;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        
+        &:hover:before {
+            height: @cropper-handle-hover-height;
+        }
+
+        &:after {
+            content: @fa-angle-down;
+            position: relative;
+            display: block;
+            font-family: FontAwesome;
+            color: #eee;
+            top: -4px;
+            left: -15px;
+            width: 30px;
+            height: auto;
+            border: none;
+        }
+    }
+
+    // Handle during active resize
+    &.cropper-moving.cropper-moving-handle .clip-handle {
+        &:before {
+            background-color: @cropper-primary-color;
+            height: @cropper-handle-hover-height;
+        }
+    }
+
+    // States - handle behavior during movement and loading
+    &.cropper-moving {
+        // Active handle state
+        &.cropper-moving-handle .clip-handle {
+            &:before {
+                background-color: @cropper-primary-color;
+                height: @cropper-handle-hover-height;
+            }
+        }
+        
+        // Hide handle during image movement
+        &:not(.cropper-moving-handle) .clip-handle {
+            z-index: -10000;
+            margin-top: -30px;
+        }
+    }
+
+    // States - handle during loading
+    &.cropper-loading .clip-handle {
+        z-index: -10000;
+        margin-top: -30px;
+    }
+}

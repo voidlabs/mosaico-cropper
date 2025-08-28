@@ -1,0 +1,48 @@
+// =============================================================================
+// TOOLBAR COMPONENT
+// =============================================================================
+
+.mo-cropper {
+    .toolbar {
+        position: absolute;
+        bottom: 0;
+        height: @cropper-toolbar-height;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        background-image: linear-gradient(transparent, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.8));
+        padding: 6px;
+        transition-property: opacity, bottom;
+        transition-duration: 0.5s;
+        transition-timing-function: ease-in-out;
+        pointer-events: all;
+        z-index: 1;
+        opacity: 1;
+    }
+
+    .tool {
+        color: @cropper-text-color;
+        cursor: pointer;
+        background-image: none;
+        border: none;
+        border-radius: 100%;
+        width: @cropper-tool-size;
+        height: @cropper-tool-size;
+        padding: 6px;
+        flex: 0 0 @cropper-tool-size;
+        max-width: @cropper-tool-size;
+        z-index: 400;
+        
+        &:hover {
+            background-color: rgba(128, 128, 128, 0.5);
+        }
+    }
+
+    // States - toolbar behavior during movement
+    &.cropper-moving:not(.cropper-moving-slide):not(.cropper-moving-wheel) .toolbar {
+        pointer-events: none;
+        opacity: 0.1;
+        bottom: -40px;
+    }
+}

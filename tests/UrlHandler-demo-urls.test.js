@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { urlAdapterFromSrc, urlAdapterToSrc } from '../src/js/url-adapters.js';
+import { urlAdapterFromSrc, urlAdapterToSrc } from '../src/js/utils/UrlHandler.js';
 
 // Import the urlAdapters file and make its globals available
 import '../urladapters.js';
@@ -74,12 +74,7 @@ describe('demo-urls', () => {
       // Parse the URL
       const parseResult = urlAdapterFromSrc(adapter, urlData, url);
 
-      // TODO maybe this logic should be in urlAdapterFromSrc ?
-      parseResult.method = 'original';
-      if (parseResult.resizeWidth !== undefined) parseResult.method = 'resizecrop';
-      else if (parseResult.cropX !== undefined || parseResult.cropX2 !== undefined ) parseResult.method = 'cropresize';
-      else if (parseResult.height !== undefined) parseResult.method = 'cover';
-      else if (parseResult.width !== undefined) parseResult.method = 'resize';
+      
 
       // If parsing failed, the test should fail
       expect(parseResult).not.toBeNull();

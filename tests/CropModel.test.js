@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CropModel } from '../src/js/crop-model.js';
+import { CropModel } from '../src/js/CropModel.js';
+import { createTestOptions } from './utils/testHelpers.js';
 
 describe('CropModel', () => {
     let cropModel;
@@ -7,11 +8,9 @@ describe('CropModel', () => {
     let mockOriginalImageSize;
 
     beforeEach(() => {
-        mockOptions = {
-            width: 400,
-            height: 300,
+        mockOptions = createTestOptions({
             maxScale: 2
-        };
+        });
         mockOriginalImageSize = { width: 800, height: 600 };
         cropModel = new CropModel(mockOptions, mockOriginalImageSize);
     });
@@ -76,13 +75,72 @@ describe('CropModel', () => {
             expect(cropModel.getCropHeight()).toBe(200);
         });
 
+        it('should return correct crop width', () => {
+            cropModel.state.crop.width = 150;
+            expect(cropModel.getCropWidth()).toBe(150);
+        });
+
         it('should return correct scale', () => {
             cropModel.state.scale = 1.5;
             expect(cropModel.getScale()).toBe(1.5);
         });
 
+        it('should return correct min scale', () => {
+            cropModel.state.minScale = 0.75;
+            expect(cropModel.getMinScale()).toBe(0.75);
+        });
+
+        it('should return correct container left position', () => {
+            cropModel.state.container.left = -50;
+            expect(cropModel.getContainerLeft()).toBe(-50);
+        });
+
+        it('should return correct container top position', () => {
+            cropModel.state.container.top = -30;
+            expect(cropModel.getContainerTop()).toBe(-30);
+        });
+
+        it('should return complete container position object', () => {
+            cropModel.state.container.left = -100;
+            cropModel.state.container.top = -80;
+            
+            const position = cropModel.getContainerPosition();
+            expect(position).toEqual({ left: -100, top: -80 });
+            
+            // Verify it returns a new object, not a reference to state
+            position.left = -200;
+            expect(cropModel.state.container.left).toBe(-100);
+        });
+
+        it('should return complete crop dimensions object', () => {
+            cropModel.state.crop.width = 300;
+            cropModel.state.crop.height = 250;
+            
+            const dimensions = cropModel.getCropDimensions();
+            expect(dimensions).toEqual({ width: 300, height: 250 });
+            
+            // Verify it returns a new object, not a reference to state
+            dimensions.width = 400;
+            expect(cropModel.state.crop.width).toBe(300);
+        });
+
         it('should return correct max scale from options', () => {
             expect(cropModel.getMaxScale()).toBe(2);
+        });
+
+        it('should return crop dimensions as a new object', () => {
+            cropModel.state.crop.width = 300;
+            cropModel.state.crop.height = 250;
+            
+            const dimensions1 = cropModel.getCropDimensions();
+            const dimensions2 = cropModel.getCropDimensions();
+            
+            // Should return same values
+            expect(dimensions1).toEqual({ width: 300, height: 250 });
+            expect(dimensions2).toEqual({ width: 300, height: 250 });
+            
+            // But should be different object instances
+            expect(dimensions1).not.toBe(dimensions2);
         });
 
         it('should return default max scale when not in options', () => {
@@ -103,6 +161,33 @@ describe('CropModel', () => {
             
             expect(size.width).toBe(1600); // 800 * 2
             expect(size.height).toBe(1200); // 600 * 2
+        });
+
+        it('should have all getter methods available', () => {
+            // Verify all getter methods exist and are functions
+            expect(typeof cropModel.getCropHeight).toBe('function');
+            expect(typeof cropModel.getCropWidth).toBe('function');
+            expect(typeof cropModel.getScale).toBe('function');
+            expect(typeof cropModel.getMinScale).toBe('function');
+            expect(typeof cropModel.getContainerLeft).toBe('function');
+            expect(typeof cropModel.getContainerTop).toBe('function');
+            expect(typeof cropModel.getContainerPosition).toBe('function');
+            expect(typeof cropModel.getCropDimensions).toBe('function');
+            expect(typeof cropModel.getMaxScale).toBe('function');
+            expect(typeof cropModel.getScaledImageSize).toBe('function');
+        });
+
+        it('should return consistent values on multiple calls', () => {
+            // Test that getters return consistent values
+            const height1 = cropModel.getCropHeight();
+            const height2 = cropModel.getCropHeight();
+            expect(height1).toBe(height2);
+            
+            const position1 = cropModel.getContainerPosition();
+            const position2 = cropModel.getContainerPosition();
+            expect(position1).toEqual(position2);
+            // But they should be different object instances
+            expect(position1).not.toBe(position2);
         });
     });
 
@@ -177,6 +262,18 @@ describe('CropModel', () => {
             expect(cropModel.state.container.left).toBe(-400); // crop.width - scaledSize.width = 400 - 800 = -400
             expect(cropModel.state.container.top).toBe(-300);  // crop.height - scaledSize.height = 300 - 600 = -300
         });
+        
+        it('should not emit event when container position is unchanged', () => {
+            const mockCallback = vi.fn();
+            cropModel.on('containerPositionChanged', mockCallback);
+            cropModel.state.container = { left: -100, top: -50 };
+            
+            // Try to update with same values
+            const result = cropModel.updateCropContainerPanZoom(-100, -50);
+            
+            expect(result).toBe(false);
+            expect(mockCallback).not.toHaveBeenCalled();
+        });
     });
 
     describe('Scale Updates', () => {
@@ -248,7 +345,7 @@ describe('CropModel', () => {
             expect(sizes.method).toBe('cropresize');
 
             // Test 'resizecrop' method when resizeWidth is defined
-            cropModel.options.resizeWidth = 400;
+            cropModel.processedOptions.resizeWidth = 400;
             sizes = cropModel.getCurrentComputedSizes();
             expect(sizes.method).toBe('resizecrop');
         });
@@ -278,9 +375,12 @@ describe('CropModel', () => {
             
             model.initializeSizes();
             
-            // Options should be scaled down by ppp factor
-            expect(model.options.width).toBe(400); // 800/2
-            expect(model.options.height).toBe(300); // 600/2
+            // ProcessedOptions should be scaled down by ppp factor, original options unchanged
+            expect(model.processedOptions.width).toBe(400); // 800/2
+            expect(model.processedOptions.height).toBe(300); // 600/2
+            // Original options should remain unchanged
+            expect(model.options.width).toBe(800);
+            expect(model.options.height).toBe(600);
         });
     });
 

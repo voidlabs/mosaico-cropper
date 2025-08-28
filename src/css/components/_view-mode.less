@@ -1,0 +1,105 @@
+// =============================================================================
+// VIEW MODE STYLES
+// Styles for the non-editable, view-only state of the cropper.
+// =============================================================================
+
+.mo-cropper.mosaico-cropper--view-mode {
+    // 1. Hide all interactive tools and visual guides
+    .toolbar,
+    .cropper-zoom-slider,
+    .clip-handle,
+    .outer-image-container {
+        display: none;
+    }
+
+    // 2. Style the trigger button that allows entering edit mode.
+    //    It's hidden by default.
+    .mosaico-cropper-edit-trigger {
+        display: none;
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 100; // Ensure it's on top of everything
+        cursor: pointer;
+        
+        // Style the icon appearance
+        .fa {
+            font-size: 14px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+
+            &:hover {
+                background-color: rgba(0, 0, 0, 0.7);
+            }
+        }
+    }
+
+    // 3. Show the edit trigger only when the user hovers over the cropper area.
+    &:hover .mosaico-cropper-edit-trigger {
+        display: block;
+    }
+
+    // 4. Disable pointer events on the image itself to prevent dragging attempts,
+    //    but ensure the trigger is clickable.
+    .clipping-container {
+        pointer-events: none;
+    }
+    .mosaico-cropper-edit-trigger {
+        pointer-events: auto;
+    }
+}
+
+// 5. When the `no-trigger` class is present, hide the trigger completely.
+.mo-cropper.mosaico-cropper--no-trigger {
+    .mosaico-cropper-edit-trigger {
+        display: none !important;
+    }
+}
+
+// 6. Styles for the 'click' trigger mode
+.mo-cropper.mosaico-cropper--view-mode.mosaico-cropper--trigger-click {
+    // Override the base cursor on the frame itself for this mode
+    .cropper-frame {
+        cursor: pointer;
+    }
+
+    // Re-enable pointer events on the container for this specific mode
+    .clipping-container {
+        pointer-events: auto;
+    }
+
+    &:hover {
+        // Add a subtle overlay to indicate interactivity
+        .clipping-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.2);
+            pointer-events: none; // Make sure the overlay itself doesn't interfere with clicks
+        }
+
+        // Add a crop icon in the center on hover
+        .cropper-frame::before {
+            content: '\f125'; // Font Awesome "crop" icon unicode
+            font-family: 'FontAwesome';
+            font-size: 18px; // Reduced size
+            font-weight: normal;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            
+            // Center the icon
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1; // Ensure it's above the overlay
+            pointer-events: none; // The icon should not capture mouse events
+        }
+    }
+}

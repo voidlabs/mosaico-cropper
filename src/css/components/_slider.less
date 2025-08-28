@@ -1,0 +1,218 @@
+// =============================================================================
+// SLIDER COMPONENT - Advanced Cross-Browser Solution
+// =============================================================================
+
+.mo-cropper {
+    .cropper-zoom-slider {
+        flex: 1 1 50%;
+        margin: 0 (8px - ((@cropper-slider-thumb-size - @cropper-slider-track-height) / 2)); 
+        position: relative;
+        z-index: 1000;
+        align-self: center; // force vertical centering in flexbox
+        display: flex;
+        align-items: center; // center the input inside the slider container
+        
+        // ===========================================================
+        // Base - reset e accessibilità
+        // ===========================================================
+        .vanilla-slider {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: @cropper-slider-track-height;
+            margin: 0;
+            padding: 0;
+            background: transparent; // track styled via pseudo-elements
+            border: none;
+            cursor: pointer;
+            outline: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent; // mobile
+            // try to avoid system accent bleeding (some browsers)
+            accent-color: transparent;
+            
+            // remove firefox focus outer border
+            &::-moz-focus-outer {
+                border: 0;
+            }
+            
+            // ===========================================================
+            // WebKit (Chrome, Safari, Edge Chromium)
+            // ===========================================================
+            &::-webkit-slider-runnable-track {
+                height: @cropper-slider-track-height;
+                background: @cropper-slider-track-color;
+                border-radius: @cropper-slider-track-radius;
+                border: none;
+            }
+            
+            // Thumb (WebKit)
+            &::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: @cropper-slider-thumb-size;
+                height: @cropper-slider-thumb-size;
+                margin-top: ((@cropper-slider-track-height - @cropper-slider-thumb-size) / 2); // center the thumb vertically
+                border-radius: 50%;
+                background: @cropper-slider-thumb-color;
+                border: none;
+                box-shadow: @cropper-slider-thumb-shadow;
+                cursor: ew-resize;
+                transform-origin: center center;
+                transition: @cropper-slider-thumb-transition;
+            }
+            
+            // Ensure the track keeps the white color even when focused/active in WebKit
+            &:focus::-webkit-slider-runnable-track,
+            &:active::-webkit-slider-runnable-track {
+                background: @cropper-slider-track-color;
+            }
+            
+            // ===========================================================
+            // Firefox (Gecko)
+            // - Firefox exposes both ::-moz-range-track and ::-moz-range-progress
+            // - need to style both track and progress (left of thumb)
+            // ===========================================================
+            &::-moz-range-track {
+                height: @cropper-slider-track-height;
+                background: @cropper-slider-track-color;
+                border-radius: @cropper-slider-track-radius;
+                border: none;
+            }
+            
+            // the filled portion (progress) — ensure it's also white
+            &::-moz-range-progress {
+                height: @cropper-slider-track-height;
+                background: @cropper-slider-track-color;
+                border-radius: @cropper-slider-track-radius;
+                border: none;
+            }
+            
+            // Thumb (Firefox)
+            &::-moz-range-thumb {
+                width: @cropper-slider-thumb-size;
+                height: @cropper-slider-thumb-size;
+                border-radius: 50%;
+                background: @cropper-slider-thumb-color;
+                border: none;
+                box-shadow: @cropper-slider-thumb-shadow;
+                cursor: ew-resize;
+                transform-origin: center center;
+                transition: @cropper-slider-thumb-transition;
+                // -moz-appearance already removed on the input
+            }
+            
+            // Remove any default focus ring on the Firefox thumb
+            &:focus::-moz-range-thumb {
+                box-shadow: @cropper-slider-thumb-shadow;
+                outline: none;
+            }
+            
+            // ===========================================================
+            // IE / older Edge (ms-)
+            // - tricky: use ::-ms-track, ::-ms-fill-lower/upper, ::-ms-thumb
+            // ===========================================================
+            &::-ms-track {
+                width: 100%;
+                height: @cropper-slider-track-height;
+                background: transparent; // hide native track so fills are used
+                border-color: transparent;
+                color: transparent; // hides ticks
+            }
+            
+            &::-ms-fill-lower {
+                background: @cropper-slider-track-color;
+                border: none;
+                border-radius: @cropper-slider-track-radius;
+                height: @cropper-slider-track-height;
+                // Make track shorter so thumb center moves within track bounds
+                margin: 0 ((@cropper-slider-thumb-size - @cropper-slider-track-height) / 2);
+            }
+            
+            &::-ms-fill-upper {
+                background: @cropper-slider-track-color;
+                border: none;
+                border-radius: @cropper-slider-track-radius;
+                height: @cropper-slider-track-height;
+                // Make track shorter so thumb center moves within track bounds
+                margin: 0 ((@cropper-slider-thumb-size - @cropper-slider-track-height) / 2);
+            }
+            
+            &::-ms-thumb {
+                width: @cropper-slider-thumb-size;
+                height: @cropper-slider-thumb-size;
+                margin-top: 0; // IE handles centering differently
+                border-radius: 50%;
+                background: @cropper-slider-thumb-color;
+                border: none;
+                box-shadow: @cropper-slider-thumb-shadow;
+                cursor: ew-resize;
+                transform-origin: center center;
+                transition: @cropper-slider-thumb-transition;
+            }
+            
+            // slightly larger hit area on hover for usability (separated by browser otherwise they are ignored)
+            &:hover::-webkit-slider-thumb {
+                transform: scale(@cropper-slider-thumb-scale-factor);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            }
+            
+            &:hover::-moz-range-thumb {
+                transform: scale(@cropper-slider-thumb-scale-factor);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            }
+            
+            &:hover::-ms-thumb {
+                transform: scale(@cropper-slider-thumb-scale-factor);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            }
+            
+            // Make sure focus doesn't re-introduce a native ring (WebKit-specific focus ring)
+            &:focus {
+                outline: none;
+            }
+            
+            &::-webkit-focus-ring-color {
+                // some browsers draw a focus ring color pseudo-element — try to neutralize it
+                outline: none;
+                border: 0;
+                box-shadow: none;
+            }
+            
+            // prevent text selection while dragging on some browsers
+            &::-moz-focus-inner {
+                border: 0;
+            }
+        }
+    }
+
+    // ===========================================================
+    // STATE: dragging (usando la classe già applicata .cropper-moving-slide)
+    // - qui ingrandiamo (via transform) e cambiamo colore.
+    // - trasformazione calcolata: scale = thumb-drag-size / thumb-size
+    // ===========================================================
+
+    // Apply moving-slide styles when the main .mo-cropper has the class (separated by browser otherwise they are ignored)
+    &.cropper-moving-slide {
+        .cropper-zoom-slider .vanilla-slider {
+            // WebKit thumb during sliding - only change color
+            &::-webkit-slider-thumb {
+                background: @cropper-primary-color !important;
+            }
+            
+            // Firefox thumb during sliding - only change color
+            &::-moz-range-thumb {
+                background: @cropper-primary-color !important;
+            }
+            
+            // IE/Edge thumb during sliding - only change color
+            &::-ms-thumb {
+                background: @cropper-primary-color !important;
+            }
+        }
+    }
+
+
+}
+

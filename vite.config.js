@@ -21,7 +21,7 @@ export default defineConfig({
         entryFileNames: 'jqueryui-mosaico-cropper.min.js',
         assetFileNames: 'jqueryui-mosaico-cropper.min.css',
         format: 'umd',
-        name: 'mosaicoCropper',
+        name: 'MosaicoCropper',
         globals: {
           'jquery': 'jQuery',
           'jquery-ui-package': 'jQuery.ui',
@@ -33,6 +33,10 @@ export default defineConfig({
     terserOptions: {
       format: {
         comments: 'some'
+      },
+      compress: {
+        drop_console: false,
+        drop_debugger: true
       }
     },
     sourcemap: true

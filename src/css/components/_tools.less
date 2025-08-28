@@ -1,0 +1,39 @@
+// =============================================================================
+// TOOLS COMPONENT (icons and states)
+// =============================================================================
+
+.mo-cropper {
+    // Default crop tool icon (close/times)
+    &:not(.cropper-has-changes) .tool-crop .fa:before {
+        content: @fa-times;
+    }
+
+    // Loading state icon
+    &.cropper-loading .tool-crop .fa:before {
+        content: @fa-spinner !important;
+    }
+
+    &.cropper-loading .tool-crop .fa {
+        animation: fa-spin 2s infinite linear;
+    }
+
+    // Zoom tool icons based on method
+    &.cropper-method-cover .tool-zoom .fa:before {
+        content: @fa-crop;
+    }
+
+    &.cropper-method-resize .tool-zoom .fa:before {
+        content: @fa-desktop;
+    }
+
+    // Loading state - tool animations and icons
+    &.cropper-loading {
+        .tool-crop .fa:before {
+            content: @fa-spinner !important;
+        }
+        
+        .tool-crop .fa {
+            animation: fa-spin 2s infinite linear;
+        }
+    }
+}

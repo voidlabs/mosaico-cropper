@@ -1,10 +1,44 @@
 // Import CSS
-import './css/jqueryui-mosaico-cropper.less';
+import './css/main.less';
 
-// Import JavaScript
-import './js/jqueryui-mosaico-cropper.js';
+// Import core functionality
+import { mosaicoCropper } from './js/MosaicoCropper.js';
+import { 
+    MosaicoCropperPlugin, 
+    createMosaicoCropper, 
+    getMosaicoCropper,
+    registerJQueryPlugin,
+    autoRegisterJQuery
+} from './js/MosaicoCropperPlugin.js';
 
-// Export the widget for use as an ES module
-// Note: The mosaicoCropper function is attached to jQuery, so we don't need to export it directly
-// Instead, we export the jQuery object which will have the widget attached
-export default window.jQuery;
+// Auto-register with jQuery if available (backward compatibility)
+if (typeof window !== 'undefined' && window.jQuery) {
+    registerJQueryPlugin(window.jQuery);
+}
+
+// Export modern API
+export {
+    // Core function (for advanced usage)
+    mosaicoCropper,
+    
+    // Modern plugin class
+    MosaicoCropperPlugin,
+    
+    // Convenience functions
+    createMosaicoCropper,
+    getMosaicoCropper,
+    
+    // jQuery integration
+    registerJQueryPlugin,
+    autoRegisterJQuery
+};
+
+// Default export for convenience
+export default {
+    mosaicoCropper,
+    MosaicoCropperPlugin,
+    createMosaicoCropper,
+    getMosaicoCropper,
+    registerJQueryPlugin,
+    autoRegisterJQuery
+};
