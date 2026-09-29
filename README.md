@@ -232,10 +232,17 @@ $('#image').on('mosaicocropperready', function(event) {
   console.log('Cropper is ready');
 });
 
+$('#image').on('mosaicocroppercrop', function(event) {
+  const { url, crop } = event.detail.data;
+  console.log('Generated crop URL:', url, crop);
+});
+
 $('#image').on('mosaicocropperheight', function(event) {
-  console.log('Crop height changed:', event.detail.value);
+  console.log('Crop height changed:', event.detail.data.value);
 });
 ```
+
+The `mosaicocroppercrop` event fires after the final URL has been generated and before it is preloaded and applied to the original image. It is also available as an `onCrop(event, data)` option callback.
 
 ## Accessibility
 
