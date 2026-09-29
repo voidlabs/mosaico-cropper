@@ -1,8 +1,23 @@
 {
   "name": "mosaico-cropper",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "title": "Mosaico Cropper",
   "description": "Modern image cropper with optional jQuery support - easy inline resize/crop/pan for images",
+  "main": "./dist/mosaico-cropper.cjs",
+  "module": "./dist/mosaico-cropper.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/mosaico-cropper.es.js",
+      "require": "./dist/mosaico-cropper.cjs",
+      "default": "./dist/mosaico-cropper.es.js"
+    },
+    "./dist/*": "./dist/*"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": [
     "jquery",
     "ui",
@@ -68,13 +83,15 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "dev": "vite",
-    "build": "npm run lint && vite build",
+    "build": "npm run lint && vite build && vite build --config vite.package.config.js",
     "preview": "vite preview",
     "start": "npm run dev",
     "lockdeps": "npx npm-force-resolutions",
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run test:run"
   }
 }

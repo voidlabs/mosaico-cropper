@@ -18,6 +18,7 @@ Mosaico Cropper now supports both **modern JavaScript** (no jQuery required) and
 
     ```javascript
     // ES6 Module
+    import 'mosaico-cropper/dist/jqueryui-mosaico-cropper.min.css';
     import { createMosaicoCropper } from 'mosaico-cropper';
 
     // Create cropper instance

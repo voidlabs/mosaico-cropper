@@ -53,6 +53,27 @@ describe('MosaicoCropper Integration Test', () => {
         instance.dispose();
     });
 
+    it('should expose keyboard-accessible controls with accessible names', () => {
+        const instance = mosaicoCropper(testImage, createTestOptions());
+
+        const fitButton = testContainer.querySelector('.tool-zoom');
+        const cropButton = testContainer.querySelector('.tool-crop');
+        const editButton = testContainer.querySelector('.mosaico-cropper-edit-trigger');
+        const zoomSlider = testContainer.querySelector('.vanilla-slider');
+
+        expect(fitButton).toBeInstanceOf(HTMLButtonElement);
+        expect(fitButton.getAttribute('aria-label')).toBe('Fit image');
+        expect(cropButton).toBeInstanceOf(HTMLButtonElement);
+        expect(cropButton.getAttribute('aria-label')).toBe('Apply crop');
+        expect(editButton).toBeInstanceOf(HTMLButtonElement);
+        expect(editButton.getAttribute('aria-label')).toBe('Edit crop');
+        expect(editButton.tabIndex).toBe(0);
+        expect(zoomSlider.type).toBe('range');
+        expect(zoomSlider.getAttribute('aria-label')).toBe('Zoom level');
+
+        instance.dispose();
+    });
+
     it('should update the model when a drag operation is performed', () => {
         // Use a smaller crop area to ensure dragging is possible
         const instance = mosaicoCropper(testImage, createTestOptions({ width: 200, height: 200 }));

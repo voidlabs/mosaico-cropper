@@ -170,6 +170,36 @@ describe('Refactored MosaicoCropper Core', () => {
             expect(eventFired).toBe(true);
             expect(eventData.data).toEqual({ value: 42 });
         });
+
+        it('should emit the generated crop before preload and call onCrop', () => {
+            const order = [];
+            let cropEvent;
+            const onCrop = vi.fn((event, data) => {
+                order.push('callback');
+                expect(event).toBe(cropEvent);
+                expect(data).toBe(cropEvent.detail.data);
+            });
+
+            plugin = new MosaicoCropperPlugin(testImage, createTestOptions({ onCrop }));
+            testImage.addEventListener('mosaicocroppercrop', (event) => {
+                cropEvent = event;
+                order.push('event');
+            });
+            ImagePreloader.preload.mockImplementationOnce((url, onSuccess) => {
+                order.push('preload');
+                onSuccess({ naturalWidth: 800, naturalHeight: 600 }, url);
+            });
+
+            testImage.parentNode.querySelector('.tool-crop').click();
+
+            expect(order).toEqual(['event', 'callback', 'preload']);
+            expect(cropEvent.detail.data.url).toEqual(expect.any(String));
+            expect(cropEvent.detail.data.crop).toEqual(expect.objectContaining({
+                width: expect.any(Number),
+                height: expect.any(Number)
+            }));
+            expect(onCrop).toHaveBeenCalledOnce();
+        });
     });
 
     describe('createMosaicoCropper utility', () => {
