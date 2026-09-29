@@ -38,7 +38,7 @@ describe('MosaicoCropper Core Logic', () => {
         urlAdapterToSrc.mockReturnValue('http://example.com/processed.jpg');
 
         cropModelInstance = createMockCropModel();
-        CropModel.mockImplementation(() => cropModelInstance);
+        CropModel.mockImplementation(function MockCropModel() { return cropModelInstance; });
 
         // Setup DOM and base mocks
         document.body.innerHTML = '<div><img id="test-image" src="about:blank" width="400" height="300" /></div>';

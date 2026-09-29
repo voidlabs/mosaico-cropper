@@ -27,7 +27,7 @@ describe('ImagePreloader', () => {
             };
             
             // Mock Image constructor
-            vi.stubGlobal('Image', vi.fn(() => mockImg));
+            vi.stubGlobal('Image', vi.fn(function ImageMock() { return mockImg; }));
             
             const result = ImagePreloader.preload('https://example.com/image.jpg');
             
@@ -43,7 +43,7 @@ describe('ImagePreloader', () => {
                 src: ''
             };
             
-            vi.stubGlobal('Image', vi.fn(() => mockImg));
+            vi.stubGlobal('Image', vi.fn(function ImageMock() { return mockImg; }));
             
             const onSuccess = vi.fn();
             const onError = vi.fn();
@@ -65,7 +65,7 @@ describe('ImagePreloader', () => {
                 src: ''
             };
             
-            vi.stubGlobal('Image', vi.fn(() => mockImg));
+            vi.stubGlobal('Image', vi.fn(function ImageMock() { return mockImg; }));
             
             const onSuccess = vi.fn();
             const onError = vi.fn();
@@ -89,7 +89,7 @@ describe('ImagePreloader', () => {
                 src: ''
             };
             
-            vi.stubGlobal('Image', vi.fn(() => mockImg));
+            vi.stubGlobal('Image', vi.fn(function ImageMock() { return mockImg; }));
             
             expect(() => {
                 ImagePreloader.preload('https://example.com/image.jpg');
@@ -105,7 +105,7 @@ describe('ImagePreloader', () => {
                 src: ''
             };
             
-            vi.stubGlobal('Image', vi.fn(() => mockImg));
+            vi.stubGlobal('Image', vi.fn(function ImageMock() { return mockImg; }));
             
             const result = ImagePreloader.preload('https://example.com/image.jpg');
             
@@ -128,7 +128,7 @@ describe('ImagePreloader', () => {
             }));
             
             let imageIndex = 0;
-            vi.stubGlobal('Image', vi.fn(() => mockImages[imageIndex++]));
+            vi.stubGlobal('Image', vi.fn(function ImageMock() { return mockImages[imageIndex++]; }));
             
             const promise = ImagePreloader.preloadMultiple(sources);
             
@@ -155,7 +155,7 @@ describe('ImagePreloader', () => {
             ];
             
             let imageIndex = 0;
-            vi.stubGlobal('Image', vi.fn(() => mockImages[imageIndex++]));
+            vi.stubGlobal('Image', vi.fn(function ImageMock() { return mockImages[imageIndex++]; }));
             
             const promise = ImagePreloader.preloadMultiple(sources);
             
@@ -178,7 +178,7 @@ describe('ImagePreloader', () => {
                 src: ''
             };
             
-            vi.stubGlobal('Image', vi.fn(() => mockImg));
+            vi.stubGlobal('Image', vi.fn(function ImageMock() { return mockImg; }));
             
             const result = ImagePreloader.isImageLoaded('https://example.com/loaded-image.jpg');
             
@@ -193,7 +193,7 @@ describe('ImagePreloader', () => {
                 src: ''
             };
             
-            vi.stubGlobal('Image', vi.fn(() => mockImg));
+            vi.stubGlobal('Image', vi.fn(function ImageMock() { return mockImg; }));
             
             const result = ImagePreloader.isImageLoaded('https://example.com/unloaded-image.jpg');
             
@@ -207,7 +207,7 @@ describe('ImagePreloader', () => {
                 src: ''
             };
             
-            vi.stubGlobal('Image', vi.fn(() => mockImg));
+            vi.stubGlobal('Image', vi.fn(function ImageMock() { return mockImg; }));
             
             const result = ImagePreloader.isImageLoaded('https://example.com/broken-image.jpg');
             
