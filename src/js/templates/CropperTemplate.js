@@ -11,18 +11,18 @@ export const CROPPER_TEMPLATE = `
     <div class="cropper-frame">
       <div class="clipping-container">
         <div class="toolbar">
-          <div class="tool tool-zoom">
+          <button type="button" class="tool tool-zoom" aria-label="Fit image">
             <i class="fa fa-compress" aria-hidden="true"></i>
-          </div>
+          </button>
           <div class="cropper-zoom-slider"></div>
-          <div class="tool tool-crop">
+          <button type="button" class="tool tool-crop" aria-label="Apply crop">
             <i class="fa fa-check" aria-hidden="true"></i>
-          </div>
+          </button>
         </div>
         <img draggable="false" class="clipped clipped-image original-src">
-        <div class="mosaico-cropper-edit-trigger">
+        <button type="button" class="mosaico-cropper-edit-trigger" aria-label="Edit crop">
           <i class="fa fa-pencil" aria-hidden="true"></i>
-        </div>
+        </button>
       </div>
     </div>
     <div class="outer-image-container">

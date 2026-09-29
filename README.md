@@ -244,6 +244,10 @@ $('#image').on('mosaicocropperheight', function(event) {
 
 The `mosaicocroppercrop` event fires after the final URL has been generated and before it is preloaded and applied to the original image. It is also available as an `onCrop(event, data)` option callback.
 
+## Accessibility
+
+Toolbar actions and the view-mode edit trigger are native buttons with accessible names. The zoom control is a labelled range input and supports its standard keyboard controls. The edit trigger remains keyboard-focusable when hidden and is revealed on focus; it is also visible on devices without hover support.
+
 ## Performance Benefits
 
 ### Bundle Size Comparison

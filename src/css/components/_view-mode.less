@@ -13,14 +13,21 @@
     }
 
     // 2. Style the trigger button that allows entering edit mode.
-    //    It's hidden by default.
+    //    Keep it in the tab order while visually revealing it on hover/focus.
     .mosaico-cropper-edit-trigger {
-        display: none;
+        appearance: none;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        color: @cropper-text-color;
         position: absolute;
         top: 8px;
         right: 8px;
         z-index: 100; // Ensure it's on top of everything
         cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
         
         // Style the icon appearance
         .fa {
@@ -37,9 +44,11 @@
         }
     }
 
-    // 3. Show the edit trigger only when the user hovers over the cropper area.
-    &:hover .mosaico-cropper-edit-trigger {
-        display: block;
+    // 3. Reveal the edit trigger for pointer and keyboard users.
+    &:hover .mosaico-cropper-edit-trigger,
+    .mosaico-cropper-edit-trigger:focus {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     // 4. Disable pointer events on the image itself to prevent dragging attempts,
@@ -48,6 +57,16 @@
         pointer-events: none;
     }
     .mosaico-cropper-edit-trigger {
+        &:focus-visible {
+            outline: 2px solid currentColor;
+            outline-offset: 2px;
+        }
+    }
+}
+
+@media (hover: none) {
+    .mo-cropper.mosaico-cropper--view-mode .mosaico-cropper-edit-trigger {
+        opacity: 1;
         pointer-events: auto;
     }
 }

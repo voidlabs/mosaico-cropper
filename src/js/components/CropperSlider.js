@@ -27,7 +27,7 @@ export class CropperSlider extends CropperComponent {
         const currentValue = Math.round(CropperSlider._fromScaleToSliderValue(cropModel.getScale()));
         
         // Use native innerHTML instead of jQuery .html()
-        this.element.innerHTML = `<input type="range" class="vanilla-slider" min="${minValue}" max="${maxValue}" step="1" value="${currentValue}">`;
+        this.element.innerHTML = `<input type="range" class="vanilla-slider" aria-label="Zoom level" min="${minValue}" max="${maxValue}" step="1" value="${currentValue}">`;
         
         // Use native querySelector instead of jQuery .find()
         this.sliderInput = this.element.querySelector('.vanilla-slider');

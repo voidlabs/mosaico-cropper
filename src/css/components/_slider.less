@@ -172,6 +172,12 @@
             &:focus {
                 outline: none;
             }
+
+            &:focus-visible {
+                outline: 2px solid @cropper-primary-color;
+                outline-offset: 4px;
+                border-radius: @cropper-slider-track-radius;
+            }
             
             &::-webkit-focus-ring-color {
                 // some browsers draw a focus ring color pseudo-element — try to neutralize it
