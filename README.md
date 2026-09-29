@@ -237,6 +237,10 @@ $('#image').on('mosaicocropperheight', function(event) {
 });
 ```
 
+## Accessibility
+
+Toolbar actions and the view-mode edit trigger are native buttons with accessible names. The zoom control is a labelled range input and supports its standard keyboard controls. The edit trigger remains keyboard-focusable when hidden and is revealed on focus; it is also visible on devices without hover support.
+
 ## Performance Benefits
 
 ### Bundle Size Comparison
