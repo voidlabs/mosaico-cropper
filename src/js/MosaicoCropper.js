@@ -228,6 +228,12 @@ export function mosaicoCropper(imgEl, options, widget = null) {
             const res = getCurrentComputedSizes();
             const url = urlAdapterToSrc(options.urlAdapter, options, res);
 
+            // Let hosts persist or otherwise consume the generated URL before
+            // the asynchronous preload applies it to the original image.
+            if (widget && typeof widget._trigger === 'function') {
+                widget._trigger('crop', null, { url, crop: res });
+            }
+
             // Use native classList instead of jQuery addClass/removeClass
             rootEl.classList.add("cropper-loading");
 
