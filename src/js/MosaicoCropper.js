@@ -42,6 +42,7 @@ export function mosaicoCropper(imgEl, options, widget = null) {
         autoClose: true,
         shiftWheel: false,
         maxScale: 2,
+        toolbar: true,
         editable: true, // Default to editable mode
         editTrigger: 'button', // 'button', 'click', 'none'
         ...options
@@ -66,10 +67,41 @@ export function mosaicoCropper(imgEl, options, widget = null) {
 
     // Safety function to ensure cropModel is initialized before use
     function getCropModel() {
+        if (disposing) throw new Error('MosaicoCropper has been destroyed.');
         if (!cropModel) {
             throw new Error('MosaicoCropper is not ready yet. The image is still loading.');
         }
         return cropModel;
+    }
+
+    function fit() {
+        getCropModel().updateSmartAutoResize();
+    }
+
+    function getZoomState() {
+        const model = getCropModel();
+        return { scale: model.getScale(), minScale: model.getMinScale(), maxScale: model.getMaxScale() };
+    }
+
+    let zoomReady = false;
+    let zoomPending = false;
+    let lastZoomState;
+
+    // Model events can describe intermediate steps of fit/resize. Publish only
+    // the settled state, once per synchronous batch, before the next paint.
+    function scheduleZoomChange() {
+        if (!zoomReady || disposing || zoomPending) return;
+        zoomPending = true;
+        Promise.resolve().then(() => {
+            zoomPending = false;
+            if (disposing) return;
+            const state = getZoomState();
+            if (Object.keys(state).every(key => state[key] === lastZoomState[key])) return;
+            lastZoomState = { ...state };
+            if (widget && typeof widget._trigger === 'function') {
+                widget._trigger('zoomchange', null, state);
+            }
+        });
     }
 
 
@@ -88,9 +120,11 @@ export function mosaicoCropper(imgEl, options, widget = null) {
         cropperDraggable.initialize(cropModel, rootEl, movingClassManager, changed);
         elementDataStore.set(imageCropContainerEl, 'cropperDraggable', cropperDraggable);
 
-        const cropperSlider = new CropperSlider(sliderEl);
-        cropperSlider.initialize(cropModel, movingClassManager, changed);
-        elementDataStore.set(sliderEl, 'cropperSliderInstance', cropperSlider);
+        if (sliderEl) {
+            const cropperSlider = new CropperSlider(sliderEl);
+            cropperSlider.initialize(cropModel, movingClassManager, changed);
+            elementDataStore.set(sliderEl, 'cropperSliderInstance', cropperSlider);
+        }
         
         componentsInitialized = true;
     }
@@ -153,7 +187,7 @@ export function mosaicoCropper(imgEl, options, widget = null) {
         const toolZoom = rootEl.querySelector('.tool-zoom');
         if (toolZoom) {
             toolZoom.addEventListener("click", function() {
-                cropModel.updateSmartAutoResize();
+                fit();
             });
         }
 
@@ -192,6 +226,8 @@ export function mosaicoCropper(imgEl, options, widget = null) {
         rootEl.focus();
 
         // Trigger ready event - backward compatibility with widget pattern
+        lastZoomState = getZoomState();
+        zoomReady = true;
         if (widget && typeof widget._trigger === 'function') {
             widget._trigger('cropperready');
         }
@@ -233,17 +269,20 @@ export function mosaicoCropper(imgEl, options, widget = null) {
             if (widget && typeof widget._trigger === 'function') {
                 widget._trigger('crop', null, { url, crop: res });
             }
+            if (disposing) return;
 
             // Use native classList instead of jQuery addClass/removeClass
             rootEl.classList.add("cropper-loading");
 
             ImagePreloader.preload(url, function(img, src) {
+                if (disposing) return;
                 // Use native setAttribute instead of jQuery attr
                 imgEl.setAttribute('src', src);
                 // not needed, as we're going to remove the whole element.
                 rootEl.classList.remove("cropper-loading");
                 done();
             }, function(src, err) {
+                if (disposing) return;
                 rootEl.classList.remove("cropper-loading");
                 rootEl.classList.add("cropper-has-changes");
                 fail();
@@ -262,7 +301,7 @@ export function mosaicoCropper(imgEl, options, widget = null) {
     }
 
     function updateAndDispose() {
-        if (!closing) {
+        if (!closing && !disposing) {
             closing = true;
             
             updateOriginalImageSrc(function() {
@@ -277,6 +316,7 @@ export function mosaicoCropper(imgEl, options, widget = null) {
     function dispose(noCallback) {
         if (disposing) return;
         else disposing = true;
+        movingClassManager.destroy();
 
         // Use native classList instead of jQuery removeClass
         if (containerEl) containerEl.classList.remove("cropper-cropping");
@@ -327,6 +367,7 @@ export function mosaicoCropper(imgEl, options, widget = null) {
 
     // Create root element using optimized template function
     const rootEl = createElementFromTemplate(CROPPER_TEMPLATE);
+    if (options.toolbar === false) rootEl.querySelector('.toolbar')?.remove();
     
     // Inizializza il MovingClassManager
     const movingClassManager = new MovingClassManager(rootEl);
@@ -395,6 +436,7 @@ export function mosaicoCropper(imgEl, options, widget = null) {
     if (!fullOriginalImgUrl.match(/[a-z]+:/)) fullOriginalImgUrl = 'http://'+fullOriginalImgUrl;
 
     ImagePreloader.preload(fullOriginalImgUrl, function(img, src) {
+        if (disposing) return;
         // Use native querySelectorAll and forEach instead of jQuery find and attr
         const originalSrcElements = rootEl.querySelectorAll('.original-src');
         originalSrcElements.forEach(element => {
@@ -410,6 +452,7 @@ export function mosaicoCropper(imgEl, options, widget = null) {
 
         // Setup event handlers
         cropModel.on('scaleChanged', function(data) {
+            scheduleZoomChange();
             // Use native style manipulation instead of jQuery css()
             const newWidth = data.scaledSize.width + "px";
             const newHeight = data.scaledSize.height + "px";
@@ -448,6 +491,7 @@ export function mosaicoCropper(imgEl, options, widget = null) {
             changed("cropSizeChanged");
         });
         cropModel.on('minScaleChanged', function(data) {
+            scheduleZoomChange();
             // Use native data storage instead of jQuery data()
             const cropperSlider = elementDataStore.get(sliderEl, 'cropperSliderInstance');
             if (cropperSlider) {
@@ -462,11 +506,14 @@ export function mosaicoCropper(imgEl, options, widget = null) {
         // initialize.call(thisVar);
         initialize();
     }, function(src) {
+        if (disposing) return;
         // TODO handle initialization error
         setTimeout(dispose);
     });
 
     return {
+        fit: fit,
+        getZoomState: getZoomState,
         getScale: function() { return getCropModel().getScale(); },
         updateScale: function(value, xp, yp) { return getCropModel().updateScale(value, xp, yp); },
         getCropHeight: function() { return getCropModel().getCropHeight(); },

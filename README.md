@@ -98,6 +98,7 @@ If you prefer to use jQuery, the plugin automatically registers itself when jQue
 
 ### Core Options
 
+- **`toolbar`** (boolean, default: `true`): Set to `false` to omit the built-in Fit / zoom / Apply controls. Pan, wheel zoom, resize, edit triggers and programmatic controls remain available.
 - **`autoClose`** (boolean, default: `true`): Whether the cropper should automatically close when losing focus
 - **`shiftWheel`** (boolean, default: `false`): When true, wheel zoom only works when Shift key is pressed
 - **`autoZoom`** (boolean, default: `undefined`): Controls automatic zooming behavior during resize operations
@@ -246,6 +247,102 @@ $('#image').on('mosaicocropperheight', function(event) {
 The `mosaicocroppercrop` event fires after the final URL has been generated and before it is preloaded and applied to the original image. It is also available as an `onCrop(event, data)` option callback.
 
 ## Accessibility
+
+### External toolbar
+
+Use `toolbar: false` and `autoClose: false` to place controls anywhere in your application.
+`autoClose: true` keeps its historical behavior: moving focus outside the cropper finalizes it
+(or returns to view mode with `editable: false`). Disabling the toolbar does not change
+`editable`, `editTrigger`, `shiftWheel`, or other interaction options.
+
+- `fit()` runs the same smart fit cycle as the built-in Fit image button, including
+  recentering and possible crop-height changes. Repeated calls can select different fits.
+  It returns the plugin for chaining.
+- `getZoomState()` returns a fresh `{ scale, minScale, maxScale }` snapshot from the model.
+  Like `scale()`, it throws while the original image is loading. After `destroy()` it
+  returns `null`; `fit()` becomes a chainable no-op.
+- The existing ready event is **`mosaicocroppercropperready`**, with callback
+  **`onCropperready(event)`**. Read the initial zoom snapshot there. No initial zoom-change
+  notification is emitted. Wait for this event rather than polling `isReady()`, which
+  historically indicates instance creation, not completion of image loading.
+- **`mosaicocropperzoomchange`**, with callback **`onZoomchange(event, state)`**, reports
+  `{ scale, minScale, maxScale }`. DOM listeners read `event.detail.data`.
+  Notifications cover wheel, internal slider, `scale(value)`, `fit()`, and resize or
+  `cropHeight(value)` changes to scale or limits. Values reflect the applied constraints.
+  The callback spelling is `onZoomchange`, following the existing dispatcher convention.
+- Updates are delivered in a microtask after the synchronous operation, before the next
+  browser paint: wheel and external slider stay synchronized in real time, without
+  debounce. Multiple changes in one synchronous batch produce one final snapshot.
+  Unchanged state and writing back the accepted scale produce no extra notifications.
+  `getZoomState()` can also be read immediately after a setter. No queued zoom events
+  or late image-load callbacks are applied after destruction.
+
+Complete integration example (the default adapter expects a Mosaico-compatible `/img`
+endpoint; supply your own URL adapter for other services):
+
+```html
+<img id="image" src="https://example.com/photo.jpg" width="400" height="300" alt="Photo">
+<fieldset id="image-controls" disabled>
+  <legend>Image controls</legend>
+  <button id="fit" type="button">Fit image</button>
+  <label for="zoom">Zoom</label>
+  <input id="zoom" type="range" step="any">
+  <button id="apply" type="button">Apply crop</button>
+</fieldset>
+```
+
+```js
+import 'mosaico-cropper/dist/jqueryui-mosaico-cropper.min.css';
+import { createMosaicoCropper } from 'mosaico-cropper';
+
+const controls = document.getElementById('image-controls');
+const zoom = document.getElementById('zoom');
+function syncZoom({ scale, minScale, maxScale }) {
+  zoom.min = minScale;
+  zoom.max = maxScale;
+  zoom.value = scale; // Setting value does not dispatch input, so no feedback loop.
+}
+const cropper = createMosaicoCropper('#image', {
+  width: 400, height: 300,
+  toolbar: false,
+  autoClose: false,
+  onCropperready(event) {
+    syncZoom(event.detail.widget.getZoomState());
+    controls.disabled = false;
+  },
+  onZoomchange(event, state) { syncZoom(state); },
+  onCrop(event, { url }) {
+    controls.disabled = true;
+    console.log('Generated crop URL:', url);
+  }
+});
+const fit = () => cropper.fit();
+const scale = () => cropper.scale(Number(zoom.value));
+const apply = () => cropper.finalizeCrop();
+document.getElementById('fit').addEventListener('click', fit);
+zoom.addEventListener('input', scale); // Includes native range keyboard interactions.
+document.getElementById('apply').addEventListener('click', apply);
+
+// Call when your component unmounts:
+function cleanup() {
+  cropper.destroy();
+  document.getElementById('fit').removeEventListener('click', fit);
+  zoom.removeEventListener('input', scale);
+  document.getElementById('apply').removeEventListener('click', apply);
+  controls.remove();
+}
+```
+
+The same commands work through jQuery: `$('#image').mosaicoCropper('fit')`,
+`$('#image').mosaicoCropper('getZoomState')`, and `$('#image').mosaicoCropper('scale', value)`.
+A logarithmic external slider can map values with `Math.log` / `Math.exp`; it does not
+need the internal slider component. `finalizeCrop()` generates the crop URL and disposes
+the cropper after preloading it, including when started with `editable: false`.
+
+Run `npm run dev` and open [the external toolbar demo](demo-external-toolbar.html) to try
+wheel synchronization, focus, keyboard controls, fit and confirmation without an image service.
+
+### Built-in controls
 
 Toolbar actions and the view-mode edit trigger are native buttons with accessible names. The zoom control is a labelled range input and supports its standard keyboard controls. The edit trigger remains keyboard-focusable when hidden and is revealed on focus; it is also visible on devices without hover support.
 

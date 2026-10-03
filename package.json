@@ -1,6 +1,6 @@
 {
   "name": "mosaico-cropper",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "title": "Mosaico Cropper",
   "description": "Modern image cropper with optional jQuery support - easy inline resize/crop/pan for images",
   "main": "./dist/mosaico-cropper.cjs",

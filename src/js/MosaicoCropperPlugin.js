@@ -26,6 +26,7 @@ export class MosaicoCropperPlugin {
         this.element = element;
         this.options = Object.assign({
             autoClose: true,
+            toolbar: true,
             shiftWheel: false
         }, options);
         
@@ -68,6 +69,17 @@ export class MosaicoCropperPlugin {
         }
     }
     
+    /** Fit using the same smart cycle as the built-in Fit image button. */
+    fit() {
+        if (this.instance) this.instance.fit();
+        return this;
+    }
+
+    /** Independent zoom snapshot; null after destruction, throws while loading. */
+    getZoomState() {
+        return this.instance ? this.instance.getZoomState() : null;
+    }
+
     /**
      * Get/set crop height
      * @param {number} [value] - Height value to set
@@ -198,7 +210,7 @@ export class MosaicoCropperPlugin {
         
         // Also try to call callback function if provided in options
         const callbackName = 'on' + eventType.charAt(0).toUpperCase() + eventType.slice(1);
-        if (typeof this.options[callbackName] === 'function') {
+        if (this.options && typeof this.options[callbackName] === 'function') {
             try {
                 this.options[callbackName].call(this.element, customEvent, data);
             } catch (error) {

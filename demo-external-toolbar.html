@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>External toolbar · Mosaico Cropper</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 760px; margin: 48px auto; padding: 0 24px; color: #243348; }
+  h1 { font-size: 28px; }
+  fieldset { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin: 24px 0; padding: 16px; border: 1px solid #b6c5d7; border-radius: 8px; }
+  button { font: inherit; padding: 6px 14px; cursor: pointer; }
+  input { width: 180px; }
+  :focus-visible { outline: 3px solid #1762ca; outline-offset: 4px; }
+  #stage { margin: 70px 0; }
+  #status { min-height: 3em; overflow-wrap: anywhere; }
+</style>
+<h1>A toolbar outside the cropper</h1>
+<p>Use the wheel over the image and watch Zoom update immediately. Drag to pan,
+  drag the bottom handle to resize, or use Fit image to cycle through smart fitting.</p>
+<button id="start" type="button">Edit image</button>
+<fieldset id="controls" disabled>
+  <legend>Image controls</legend>
+  <button id="fit" type="button">Fit image</button>
+  <label for="zoom">Zoom</label>
+  <input id="zoom" type="range" min="0.5" max="2" step="any">
+  <output id="value" for="zoom"></output>
+  <button id="apply" type="button">Apply crop</button>
+</fieldset>
+<p>Keyboard: Tab to a control, use arrow keys on Zoom, and Enter or Space on buttons.
+  This demo uses <code>autoClose: false</code> so focusing the external toolbar keeps
+  editing active. With the default <code>autoClose: true</code>, leaving the cropper
+  finalizes it.</p>
+<div id="stage"><img id="photo" width="400" height="300" alt="Colorful geometric sample for cropping"></div>
+<p id="status" role="status">Select Edit image to start.</p>
+<p><a href="demo.html">All demos</a></p>
+<script type="module" src="/src/demo-external-toolbar.js"></script>
+</html>
