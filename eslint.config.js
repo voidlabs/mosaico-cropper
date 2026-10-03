@@ -4,7 +4,8 @@ import js from "@eslint/js";
 
 export default [
   js.configs.recommended,
-  { files: ["**/*.ts"], languageOptions: { parser: tseslint.parser }, rules: { "no-undef": "off" } },
+  // TypeScript checks undefined names and permits function overload declarations.
+  { files: ["**/*.ts"], languageOptions: { parser: tseslint.parser }, rules: { "no-undef": "off", "no-redeclare": "off" } },
   {
     rules: {
         "no-empty": "off",

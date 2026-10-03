@@ -1,0 +1,94 @@
+import type { CropperOptions, CropperInstance, CropperEventMap } from '../../types.js';
+/**
+ * Native MosaicoCropper Plugin Class
+ * Replaces jQuery UI Widget Factory pattern with modern ES6 class
+ */
+export declare class MosaicoCropperPlugin {
+    element: HTMLImageElement | null;
+    options: CropperOptions | null;
+    instance: CropperInstance | null;
+    isInitialized: boolean;
+    constructor(element: HTMLImageElement | string, options?: CropperOptions);
+    /**
+     * Initialize the cropper instance
+     * @private
+     */
+    _init(): void;
+    protected _createInstance(): CropperInstance | null;
+    /** Subscribe without DOM listeners; returns an unsubscribe function. */
+    onZoomChange(listener: (state: import('../../types.js').ZoomState) => void): () => void;
+    /** Return to view mode without finalizing or destroying the cropper. */
+    finishEdit(): this;
+    /**
+     * Get current scale value
+     * @param {number} [value] - Scale value to set
+     * @returns {number|MosaicoCropperPlugin} Current scale or this for chaining
+     */
+    scale(): number;
+    scale(value: number): this;
+    /** Fit using the same smart cycle as the built-in Fit image button. */
+    fit(): this;
+    /** Independent zoom snapshot; null after destruction, throws while loading. */
+    getZoomState(): import("../../types.js").ZoomState | null;
+    /**
+     * Get/set crop height
+     * @param {number} [value] - Height value to set
+     * @returns {number|MosaicoCropperPlugin} Current height or this for chaining
+     */
+    cropHeight(): number;
+    cropHeight(value: number): this;
+    /**
+     * Get current options
+     * @returns {Object} Current options object
+     */
+    getOptions(): CropperOptions;
+    /**
+     * Update options and reinitialize if necessary
+     * @param {Object} newOptions - New options to merge
+     * @returns {MosaicoCropperPlugin} This for chaining
+     */
+    updateOptions(newOptions: CropperOptions): this;
+    /**
+     * Finalize crop and dispose the cropper (for view mode)
+     * @returns {MosaicoCropperPlugin} This for chaining
+     */
+    finalizeCrop(): this;
+    /**
+     * Programmatically starts the editing mode for a non-editable cropper.
+     * @returns {MosaicoCropperPlugin} This for chaining
+     */
+    startEdit(): this;
+    /**
+     * Check if cropper is initialized
+     * @returns {boolean} True if initialized
+     */
+    isReady(): boolean;
+    /**
+     * Destroy the cropper instance
+     * @returns {MosaicoCropperPlugin} This for chaining
+     */
+    destroy(): this;
+    /**
+     * Emit custom events (replaces jQuery UI Widget's _trigger)
+     * @param {string} eventType - Event type name
+     * @param {Event} [originalEvent] - Original DOM event if any
+     * @param {*} [data] - Event data
+     * @returns {boolean} True if event was not cancelled
+     */
+    _trigger<K extends keyof CropperEventMap>(eventType: K, originalEvent?: Event | null, data?: CropperEventMap[K]): boolean;
+}
+/**
+ * Factory function for creating MosaicoCropper instances
+ * Provides a simpler API for one-off usage
+ *
+ * @param {HTMLElement|string} element - Target element or selector
+ * @param {Object} [options] - Configuration options
+ * @returns {MosaicoCropperPlugin} New plugin instance
+ */
+export declare function createMosaicoCropper(element: HTMLImageElement | string, options?: CropperOptions): MosaicoCropperPlugin;
+/**
+ * Get existing MosaicoCropper instance from element
+ * @param {HTMLElement} element - Target element
+ * @returns {MosaicoCropperPlugin|null} Existing instance or null
+ */
+export declare function getMosaicoCropper(element: HTMLElement): MosaicoCropperPlugin | null;

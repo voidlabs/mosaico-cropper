@@ -277,6 +277,40 @@ The `mosaicocroppercrop` event fires after the final URL has been generated and 
 
 ### External toolbar
 
+To exclude the built-in UI from your dependency graph entirely, import the core:
+
+```ts
+import { createMosaicoCropper } from 'mosaico-cropper/core';
+import 'mosaico-cropper/core.css';
+
+const cropper = createMosaicoCropper('#image', { autoClose: false });
+const unsubscribe = cropper.onZoomChange(({ scale, minScale, maxScale }) => {
+  // Update your own controls. Wait for onCropperready for the initial state.
+});
+// When removing your controls:
+unsubscribe();
+cropper.destroy();
+```
+
+The core retains image rendering, crop geometry, pan, wheel and the resize handle.
+It contains no toolbar, zoom slider, edit button, or jQuery registration, even if
+`toolbar: true` is supplied. `core.css` includes only the crop surface, gesture and
+view-mode styles. Use `startEdit()` with your own edit button (or `editTrigger: 'click'`).
+`finishEdit()` returns an `editable: false` cropper to view mode without finalizing;
+it is a no-op in the default editable mode. `finalizeCrop()` still saves and disposes.
+
+The main `mosaico-cropper` import preserves the complete UI and jQuery compatibility.
+`toolbar: false` on that import omits the toolbar at runtime while retaining the edit
+trigger. For bundle exclusion, choose `/core`. Both ESM and CommonJS core entries and
+their TypeScript declarations are provided. Neither JavaScript entry imports CSS.
+
+The built-in UI is itself a consumer of `fit()`, `scale()`, `getZoomState()`,
+`onZoomChange()`, `startEdit()`, `finishEdit()` and `finalizeCrop()`. It has no access
+to `CropModel`. `onZoomChange(listener)` returns an unsubscribe function and delivers
+the same settled snapshots as the DOM event/callback below; each subscriber receives
+its own copy. Subscriptions are cleared on destruction or `updateOptions()` reinitialization,
+so register again for the new instance. A subscription after destruction is a no-op.
+
 Use `toolbar: false` and `autoClose: false` to place controls anywhere in your application.
 `autoClose: true` keeps its historical behavior: moving focus outside the cropper finalizes it
 (or returns to view mode with `editable: false`). Disabling the toolbar does not change

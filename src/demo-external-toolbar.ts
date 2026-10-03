@@ -1,5 +1,6 @@
-import type { MosaicoCropperPlugin, ZoomState, UrlAdapter } from './package.js';
-import { createMosaicoCropper } from './index.js';
+import './css/core.less';
+import type { MosaicoCropperPlugin, ZoomState, UrlAdapter } from './core.js';
+import { createMosaicoCropper as createCore } from './core.js';
 
 const photo = document.getElementById('photo') as HTMLImageElement;
 const controls = document.getElementById('controls') as HTMLFieldSetElement;
@@ -51,7 +52,7 @@ start.addEventListener('click', () => {
     photo.width = 400; photo.height = 300;
     start.disabled = true;
     status.textContent = 'Loading…';
-    cropper = createMosaicoCropper(photo, {
+    cropper = createCore(photo, {
         width: 400, height: 300, toolbar: false, autoClose: false, urlAdapter,
         onCropperready(event) {
             sync(event.detail.widget.getZoomState()!);

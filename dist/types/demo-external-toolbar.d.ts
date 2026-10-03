@@ -1,1 +1,1 @@
-export {};
+import './css/core.less';

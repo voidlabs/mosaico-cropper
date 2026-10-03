@@ -1,0 +1,13 @@
+@charset "UTF-8";
+@import "_variables";
+@import "_base";
+@import "components/_resize-handle";
+
+.mo-cropper.mosaico-cropper--view-mode {
+    .clip-handle, .outer-image-container { display: none; }
+    .clipping-container { pointer-events: none; }
+}
+.mo-cropper.mosaico-cropper--view-mode.mosaico-cropper--trigger-click {
+    .cropper-frame { cursor: pointer; }
+    .clipping-container { pointer-events: auto; }
+}

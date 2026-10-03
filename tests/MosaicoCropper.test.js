@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mosaicoCropper } from '../src/js/MosaicoCropper.ts';
+import { mosaicoCropper } from '../src/js/core/MosaicoCropper.ts';
 import { 
     createMockElement, 
     createMockCropModel, 
@@ -13,7 +13,6 @@ vi.mock('../src/js/utils/UrlHandler.ts');
 vi.mock('../src/js/CropModel.ts');
 vi.mock('../src/js/utils/ImagePreloader.ts');
 vi.mock('../src/js/utils/MovingClassManager.ts');
-vi.mock('../src/js/components/CropperSlider.ts');
 vi.mock('../src/js/components/CropperDraggable.ts');
 vi.mock('../src/js/components/CropperResizer.ts');
 vi.mock('../src/js/templates/CropperTemplate.ts');
@@ -139,53 +138,12 @@ describe('MosaicoCropper Core Logic', () => {
         expect(ImagePreloader.preload).toHaveBeenCalledWith('http://test.com/img.png', expect.any(Function), expect.any(Function));
     });
 
-    it('should setup and respond to tool clicks', () => {
-        const mockParent = createMockElement();
-        mockParent.appendChild(imgEl);
-        
-        // Mock the root element's querySelector to return tool elements
-        const mockToolCrop = createMockElement();
-        const mockToolZoom = createMockElement();
-        
-        // Override the mocked createElementFromTemplate to return our custom root
-        vi.mocked(createElementFromTemplate).mockImplementation(() => {
-            const mockRoot = createMockElement();
-            // Override querySelector to return our mock elements
-            mockRoot.querySelector.mockImplementation(selector => {
-                if (selector === '.tool-crop') return mockToolCrop;
-                if (selector === '.tool-zoom') return mockToolZoom;
-                if (selector === '.cropper-zoom-slider') return createMockElement();
-                if (selector === '.clipped') return createMockElement();
-                if (selector === '.cropper-frame') return createMockElement();
-                if (selector === '.outer-image-container') return createMockElement();
-                if (selector === '.original-src') return createMockElement();
-                return createMockElement();
-            });
-            
-            // Override querySelectorAll for original-src elements
-            mockRoot.querySelectorAll.mockImplementation(selector => {
-                if (selector === '.original-src') return [createMockElement()];
-                return [];
-            });
-            
-            return mockRoot;
-        });
-        
-        mosaicoCropper(imgEl, createTestOptions(), widget);
-
-        // Verify that event listeners were added to the tools
-        expect(mockToolZoom.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
-        expect(mockToolCrop.addEventListener).toHaveBeenCalledWith('click', expect.any(Function));
-        
-        // Test zoom click handler
-        const zoomClickHandler = mockToolZoom.addEventListener.mock.calls[0][1];
-        zoomClickHandler();
-        expect(cropModelInstance.updateSmartAutoResize).toHaveBeenCalled();
-        
-        // Test crop click handler  
-        const cropClickHandler = mockToolCrop.addEventListener.mock.calls[0][1];
-        cropClickHandler();
-        expect(urlAdapterToSrc).toHaveBeenCalled();
+    it('does not initialize built-in controls in the core', () => {
+        const api = mosaicoCropper(imgEl, createTestOptions(), widget);
+        expect(cropModelInstance.updateSmartAutoResize).not.toHaveBeenCalled();
+        api.fit();
+        expect(cropModelInstance.updateSmartAutoResize).toHaveBeenCalledOnce();
+        api.dispose();
     });
 
     describe('API Methods', () => {
@@ -389,10 +347,10 @@ describe('MosaicoCropper Core Logic', () => {
 
             mosaicoCropper(imgEl, createTestOptions(), widget);
 
-            expect(mockRoot.querySelector).toHaveBeenCalledWith('.cropper-zoom-slider');
+            expect(mockRoot.querySelector).not.toHaveBeenCalledWith('.cropper-zoom-slider');
             expect(mockRoot.querySelector).toHaveBeenCalledWith('.cropper-frame');
-            expect(mockRoot.querySelector).toHaveBeenCalledWith('.tool-crop');
-            expect(mockRoot.querySelector).toHaveBeenCalledWith('.tool-zoom');
+            expect(mockRoot.querySelector).not.toHaveBeenCalledWith('.tool-crop');
+            expect(mockRoot.querySelector).not.toHaveBeenCalledWith('.tool-zoom');
         });
 
         it('should handle element removal on cleanup', () => {

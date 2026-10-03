@@ -1,4 +1,4 @@
-import type { MosaicoCropperPlugin } from './js/MosaicoCropperPlugin.js';
+import type { MosaicoCropperPlugin } from './js/core/MosaicoCropperPlugin.js';
 
 export interface Size { width: number; height: number }
 export interface Position { left: number; top: number }
@@ -53,6 +53,10 @@ export interface CropperWidget {
     destroy?(): unknown;
 }
 export interface CropperInstance {
+    scale(): number;
+    scale(value: number): CropperInstance;
+    onZoomChange(listener: (state: ZoomState) => void): () => void;
+    finishEdit(): void;
     fit(): void;
     getZoomState(): ZoomState;
     getScale(): number;
@@ -63,6 +67,8 @@ export interface CropperInstance {
     finalizeCrop(): void;
     startEdit(): void;
 }
+/** UI extension contract. Contains no model or gesture-component references. */
+export type CropperUIFactory = (host: HTMLElement, cropper: CropperInstance, options: Readonly<CropperOptions>) => { destroy(): void };
 // Structural integration boundary: jQuery remains an optional runtime dependency.
 export interface JQueryCollectionLike {
     [index: number]: HTMLElement;

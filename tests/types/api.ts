@@ -1,4 +1,12 @@
 import { createMosaicoCropper, type CropperOptions, type ZoomState, type UrlAdapter } from '../../src/package.js';
+import { createMosaicoCropper as createCore } from '../../src/core.js';
+// @ts-expect-error The core does not include jQuery registration.
+import { registerJQueryPlugin } from '../../src/core.js';
+
+const core = createCore('#image');
+const unsubscribe: () => void = core.onZoomChange(state => core.scale(state.scale));
+unsubscribe();
+core.startEdit().finishEdit();
 
 const adapter: UrlAdapter = { fromSrc: '{urlOriginal:.*}', toSrc: crop => `${crop.width}/${crop.height}` };
 const options: CropperOptions = {
