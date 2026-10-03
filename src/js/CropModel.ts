@@ -1,8 +1,15 @@
+import type { CropperOptions, Size, Position, CropMethod, CropResult } from '../types.js';
+interface ModelEvents { scaleChanged: { scale: number; scaledSize: Size }; minScaleChanged: { minScale: number }; cropSizeChanged: Size; containerPositionChanged: Position; modelUpdated: { reason: string } }
 /**
  * CropModel - Gestisce lo stato del modello di cropping separato dalla UI
  */
 export class CropModel {
-    constructor(options = {}, originalImageSize) {
+    state: { container: Position; crop: Size; scale: number; minScale: number };
+    originalImageSize: Size;
+    options: CropperOptions;
+    processedOptions: CropperOptions;
+    listeners: { [K in keyof ModelEvents]?: Array<(data: ModelEvents[K]) => void> };
+    constructor(options: CropperOptions = {}, originalImageSize: Size) {
         if (!originalImageSize) {
             throw new Error('CropModel requires originalImageSize parameter');
         }
@@ -34,14 +41,14 @@ export class CropModel {
 
     /** EVENT SYSTEM **/
     
-    on(event, callback) {
+    on<K extends keyof ModelEvents>(event: K, callback: (data: ModelEvents[K]) => void) {
         if (!this.listeners[event]) {
             this.listeners[event] = [];
         }
         this.listeners[event].push(callback);
     }
 
-    emit(event, data) {
+    emit<K extends keyof ModelEvents>(event: K, data: ModelEvents[K]) {
         if (this.listeners[event]) {
             this.listeners[event].forEach(callback => callback(data));
         }
@@ -92,7 +99,7 @@ export class CropModel {
         };
     }
 
-    getScaledImageSize(scale) {
+    getScaledImageSize(scale?: number) {
         return {
             width: Math.round(this.originalImageSize.width * (scale || this.state.scale)),
             height: Math.round(this.originalImageSize.height * (scale || this.state.scale))
@@ -101,7 +108,7 @@ export class CropModel {
 
     /** UTILITIES **/
 
-    checkRange(value, min, max) {
+    checkRange(value: number, min: number, max: number) {
         if (value < min) return min;
         if (value > max) return max;
         return value;
@@ -131,7 +138,8 @@ export class CropModel {
         // TODO we should support non integer ppps too.
         if (ppp * scale > 1) ppp = Math.ceil(1 / scale);
 
-        const res = {
+        const res: CropResult = {
+            method: 'cropresize', cropX2: 0, cropY2: 0,
             resizeWidth: Math.round(width * ppp),
             resizeHeight: Math.round(height * ppp),
             offsetX: Math.round(Math.max(0, -this.state.container.left) * ppp),
@@ -162,7 +170,7 @@ export class CropModel {
 
     /** MODEL UPDATE METHODS **/
 
-    updateScale(newScale, xp, yp) {
+    updateScale(newScale: number, xp?: number, yp?: number) {
         const scaledSize = this.getScaledImageSize();
         if (xp == undefined) xp = (this.state.crop.width / 2 - this.state.container.left) / scaledSize.width;
         if (yp == undefined) yp = (this.state.crop.height / 2 - this.state.container.top) / scaledSize.height;
@@ -180,7 +188,7 @@ export class CropModel {
         } else return false;
     }
 
-    updateScaledImageSize(newScale) {
+    updateScaledImageSize(newScale: number) {
         if (this.state.scale !== newScale) {
             this.state.scale = newScale;
             const scaledSize = this.getScaledImageSize();
@@ -193,22 +201,22 @@ export class CropModel {
         } else return false;
     }
 
-    updateCropperFrameSize(newCropHeight, newCropWidth) {
+    updateCropperFrameSize(newCropHeight?: number, newCropWidth?: number) {
         let changed = false;
         
         if (newCropHeight !== undefined) {
-            this.state.crop.height = parseInt(newCropHeight);
+            this.state.crop.height = parseInt(String(newCropHeight));
             changed = true;
         }
         if (newCropWidth !== undefined) {
-            this.state.crop.width = parseInt(newCropWidth);
+            this.state.crop.width = parseInt(String(newCropWidth));
             changed = true;
         }
 
         if (changed) {
             // Compute new minScale
-            if (this.originalImageSize && this.processedOptions.width) {
-                const widthRatio = this.processedOptions.width / this.originalImageSize.width,
+            if (this.originalImageSize && this.processedOptions.width!) {
+                const widthRatio = this.processedOptions.width! / this.originalImageSize.width,
                     heightRatio = this.state.crop.height / this.originalImageSize.height,
                     minScale = Math.max(widthRatio, heightRatio);
                 if (minScale !== this.state.minScale) {
@@ -224,7 +232,7 @@ export class CropModel {
         }
     }
 
-    updateCropContainerPanZoom(newLeft, newTop, newScale) {
+    updateCropContainerPanZoom(newLeft?: number, newTop?: number, newScale?: number) {
         let changed = false;
 
         if (newScale !== undefined) {
@@ -270,7 +278,7 @@ export class CropModel {
         return this.updateCropContainerPanZoom(newLeft, newTop, newScale);
     }
 
-    updateCropHeightInternal(method, newHeight, origHeight, originalOuterTop, maxHeight) {
+    updateCropHeightInternal(method: CropMethod, newHeight: number, origHeight: number, originalOuterTop: number, maxHeight: number) {
         // Containment. An alternative to "containment" would be auto-zooming when reaching the maxHeight (but de-zooming would be counter-intuitive)
         if (!this.options.autoZoom && newHeight > maxHeight) newHeight = maxHeight;
 
@@ -293,16 +301,16 @@ export class CropModel {
         }
     }
 
-    updateCropHeight(newHeight) {
+    updateCropHeight(newHeight: number) {
         const origHeight = this.state.crop.height;
         this.updateCropHeightInternal(this.getCurrentComputedMethod(), newHeight, origHeight, this.state.container.top, this.getScaledImageSize().height);
         return origHeight !== this.state.crop.height;
     }
 
     updatePanZoomCropToFitWidthAndAspect() {
-        if (!this.processedOptions.width) return false;
+        if (!this.processedOptions.width!) return false;
         
-        const newScale = this.processedOptions.width / this.originalImageSize.width;
+        const newScale = this.processedOptions.width! / this.originalImageSize.width;
         const newHeight = Math.round(this.originalImageSize.height * newScale);
         // TODO maybe we could merge the updateScale in the updateCropHeight call.
         let changed = this.updateCropHeight(newHeight);
@@ -328,14 +336,14 @@ export class CropModel {
         // resizeWith, resizeHeight, offsetX, offestY, width and height must be manipulated according to "ppp"
         // crop* instead must not be changed.
         if (typeof this.options.ppp !== 'undefined') {
-            // console.log("ppp", this.options.ppp, this.options.width, Math.round(this.options.width / this.options.ppp));
+            // console.log("ppp", this.options.ppp, this.options.width, Math.round(this.options.width! / this.options.ppp));
             // Process values with ppp and store in processedOptions instead of modifying original options
-            if (typeof this.processedOptions.width !== 'undefined') this.processedOptions.width = Math.round(this.processedOptions.width / this.options.ppp);
-            if (typeof this.processedOptions.height !== 'undefined') this.processedOptions.height = Math.round(this.processedOptions.height / this.options.ppp);
+            if (typeof this.processedOptions.width !== 'undefined') this.processedOptions.width = Math.round(this.processedOptions.width! / this.options.ppp);
+            if (typeof this.processedOptions.height !== 'undefined') this.processedOptions.height = Math.round(this.processedOptions.height! / this.options.ppp);
             if (typeof this.processedOptions.resizeWidth !== 'undefined') this.processedOptions.resizeWidth = Math.round(this.processedOptions.resizeWidth / this.options.ppp);
             if (typeof this.processedOptions.resizeHeight !== 'undefined') this.processedOptions.resizeHeight = Math.round(this.processedOptions.resizeHeight / this.options.ppp);
-            if (typeof this.processedOptions.offsetX !== 'undefined') this.processedOptions.offsetX = Math.round(this.processedOptions.offsetX / this.options.ppp);
-            if (typeof this.processedOptions.offsetY !== 'undefined') this.processedOptions.offsetY = Math.round(this.processedOptions.offsetY / this.options.ppp);
+            if (typeof this.processedOptions.offsetX !== 'undefined') this.processedOptions.offsetX = Math.round(this.processedOptions.offsetX! / this.options.ppp);
+            if (typeof this.processedOptions.offsetY !== 'undefined') this.processedOptions.offsetY = Math.round(this.processedOptions.offsetY! / this.options.ppp);
         }
 
         if (typeof this.processedOptions.resizeWidth !== 'undefined') {
@@ -343,31 +351,31 @@ export class CropModel {
             newScale = this.processedOptions.resizeWidth / this.originalImageSize.width;
             newCropHeight = this.processedOptions.height;
             newWidth = this.processedOptions.width;
-            newLeft = -this.processedOptions.offsetX;
-            newTop = -this.processedOptions.offsetY;
+            newLeft = -this.processedOptions.offsetX!;
+            newTop = -this.processedOptions.offsetY!;
         } else if (typeof this.options.cropX2 !== 'undefined' || typeof this.options.cropWidth !== 'undefined') {
             // cropresize
             // TODO error reporting for missing mandatory parameters.
-            if (this.processedOptions.cropWidth == undefined) this.processedOptions.cropWidth = this.options.cropX2 - this.options.cropX;
-            if (this.processedOptions.cropHeight == undefined) this.processedOptions.cropHeight = this.options.cropY2 - this.options.cropY;
+            if (this.processedOptions.cropWidth == undefined) this.processedOptions.cropWidth = this.options.cropX2! - this.options.cropX!;
+            if (this.processedOptions.cropHeight == undefined) this.processedOptions.cropHeight = this.options.cropY2! - this.options.cropY!;
             if (this.processedOptions.cropX == undefined) this.processedOptions.cropX = 0;
             if (this.processedOptions.cropY == undefined) this.processedOptions.cropY = 0;
-            newScale = this.processedOptions.width / this.processedOptions.cropWidth;
-            newCropHeight = this.processedOptions.height || this.processedOptions.cropHeight * newScale;
+            newScale = this.processedOptions.width! / this.processedOptions.cropWidth;
+            newCropHeight = this.processedOptions.height || this.processedOptions.cropHeight! * newScale;
             newWidth = this.processedOptions.width;
-            newLeft = Math.round(-this.processedOptions.cropX * newScale);
-            newTop = Math.round(-this.processedOptions.cropY * newScale);
+            newLeft = Math.round(-this.processedOptions.cropX! * newScale);
+            newTop = Math.round(-this.processedOptions.cropY! * newScale);
         } else if (typeof this.processedOptions.height !== 'undefined') {
             // cover
-            newScale = Math.max(this.processedOptions.width / this.originalImageSize.width, this.processedOptions.height / this.originalImageSize.height);
-            newWidth = Math.min(this.processedOptions.width, Math.round(this.originalImageSize.width * newScale));
+            newScale = Math.max(this.processedOptions.width! / this.originalImageSize.width, this.processedOptions.height! / this.originalImageSize.height);
+            newWidth = Math.min(this.processedOptions.width!, Math.round(this.originalImageSize.width * newScale));
             newCropHeight = Math.min(this.processedOptions.height, Math.round(this.originalImageSize.height * newScale));
             const resizedSize = this.getScaledImageSize(newScale);
             newLeft = Math.round((newWidth - resizedSize.width) / 2);
             newTop = Math.round((newCropHeight - resizedSize.height) / 2);
-        } else if (typeof this.processedOptions.width) {
+        } else if (typeof this.processedOptions.width!) {
             // resize
-            newScale = this.processedOptions.width / this.originalImageSize.width;
+            newScale = this.processedOptions.width! / this.originalImageSize.width;
             newCropHeight = Math.round(this.originalImageSize.height * newScale);
             newWidth = this.processedOptions.width;
             newLeft = 0;

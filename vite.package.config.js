@@ -8,7 +8,7 @@ export default defineConfig({
         sourcemap: true,
         minify: 'terser',
         lib: {
-            entry: resolve(__dirname, 'src/package.js'),
+            entry: resolve(__dirname, 'src/package.ts'),
             formats: ['es', 'cjs'],
             fileName: (format) => format === 'es'
                 ? 'mosaico-cropper.es.js'

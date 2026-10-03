@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ImagePreloader } from '../src/js/utils/ImagePreloader.js';
+import { ImagePreloader } from '../src/js/utils/ImagePreloader.ts';
 import { mockConsoleLog } from './utils/testHelpers.js';
 
 describe('ImagePreloader', () => {

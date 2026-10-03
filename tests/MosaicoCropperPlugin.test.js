@@ -4,13 +4,13 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mosaicoCropper } from '../src/js/MosaicoCropper.js';
+import { mosaicoCropper } from '../src/js/MosaicoCropper.ts';
 import { 
     MosaicoCropperPlugin, 
     createMosaicoCropper,
     getMosaicoCropper,
     registerJQueryPlugin
-} from '../src/js/MosaicoCropperPlugin.js';
+} from '../src/js/MosaicoCropperPlugin.ts';
 import { 
     setupImagePreloaderMock,
     createTestContainer,
@@ -19,9 +19,9 @@ import {
 } from './utils/testHelpers.js';
 
 // Mock all dependencies
-vi.mock('../src/js/utils/ImagePreloader.js');
+vi.mock('../src/js/utils/ImagePreloader.ts');
 
-import { ImagePreloader } from '../src/js/utils/ImagePreloader.js';
+import { ImagePreloader } from '../src/js/utils/ImagePreloader.ts';
 
 describe('Refactored MosaicoCropper Core', () => {
     let testImage;

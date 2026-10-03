@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mosaicoCropper } from '../src/js/MosaicoCropper.js';
+import { mosaicoCropper } from '../src/js/MosaicoCropper.ts';
 import {
     createTestContainer,
     cleanupTestContainer,
@@ -7,8 +7,8 @@ import {
 } from './utils/testHelpers.js';
 
 // For this integration test, we only mock what's necessary, like ImagePreloader.
-vi.mock('../src/js/utils/ImagePreloader.js');
-import { ImagePreloader } from '../src/js/utils/ImagePreloader.js';
+vi.mock('../src/js/utils/ImagePreloader.ts');
+import { ImagePreloader } from '../src/js/utils/ImagePreloader.ts';
 import { setupImagePreloaderMock } from './utils/testHelpers.js';
 
 describe('MosaicoCropper Integration Test', () => {

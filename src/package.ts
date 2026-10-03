@@ -1,3 +1,4 @@
+export type * from './types.js';
 // Import core functionality
 import { mosaicoCropper } from './js/MosaicoCropper.js';
 import {

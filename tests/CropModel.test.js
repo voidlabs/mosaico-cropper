@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CropModel } from '../src/js/CropModel.js';
+import { CropModel } from '../src/js/CropModel.ts';
 import { createTestOptions } from './utils/testHelpers.js';
 
 describe('CropModel', () => {

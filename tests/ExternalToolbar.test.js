@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createMosaicoCropper, registerJQueryPlugin } from '../src/js/MosaicoCropperPlugin.js';
+import { createMosaicoCropper, registerJQueryPlugin } from '../src/js/MosaicoCropperPlugin.ts';
 import { createTestContainer, createTestOptions } from './utils/testHelpers.js';
-import { ImagePreloader } from '../src/js/utils/ImagePreloader.js';
+import { ImagePreloader } from '../src/js/utils/ImagePreloader.ts';
 
-vi.mock('../src/js/utils/ImagePreloader.js');
+vi.mock('../src/js/utils/ImagePreloader.ts');
 
 describe('External toolbar public contract', () => {
     let container, image, cropper, loads, changes;

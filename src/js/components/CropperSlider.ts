@@ -1,3 +1,6 @@
+import type { CropModel } from '../CropModel.js';
+import type { MovingClassManager } from '../utils/MovingClassManager.js';
+import type { CropperWidget, CropMethod } from '../../types.js';
 import { CropperComponent } from './CropperComponent.js';
 
 /**
@@ -5,21 +8,21 @@ import { CropperComponent } from './CropperComponent.js';
  * Refactored per utilizzare JavaScript nativo invece di jQuery
  */
 export class CropperSlider extends CropperComponent {
-    constructor(element) {
+    constructor(element: HTMLElement) {
         super(element, 'CropperSlider');
         
         this.sliderInput = null;
     }
     
-    static _fromSliderValueToScale(value) {
+    static _fromSliderValueToScale(value: number) {
         return Math.pow(1.03, value) / 100;
     }
     
-    static _fromScaleToSliderValue(scale) {
+    static _fromScaleToSliderValue(scale: number) {
         return Math.log(scale * 100) / Math.log(1.03);
     }
     
-    initialize(cropModel, movingClassManager, onChanged) {
+    initialize(cropModel: CropModel, movingClassManager: MovingClassManager, onChanged: (reason?: string) => void) {
         super.initializeBase(cropModel, movingClassManager, onChanged);
         
         const minValue = Math.floor(CropperSlider._fromScaleToSliderValue(cropModel.getMinScale()));
@@ -27,24 +30,26 @@ export class CropperSlider extends CropperComponent {
         const currentValue = Math.round(CropperSlider._fromScaleToSliderValue(cropModel.getScale()));
         
         // Use native innerHTML instead of jQuery .html()
-        this.element.innerHTML = `<input type="range" class="vanilla-slider" aria-label="Zoom level" min="${minValue}" max="${maxValue}" step="1" value="${currentValue}">`;
+        this.element!.innerHTML = `<input type="range" class="vanilla-slider" aria-label="Zoom level" min="${minValue}" max="${maxValue}" step="1" value="${currentValue}">`;
         
         // Use native querySelector instead of jQuery .find()
-        this.sliderInput = this.element.querySelector('.vanilla-slider');
+        this.sliderInput = this.element!.querySelector<HTMLInputElement>('.vanilla-slider')!;
         
         let isSliding = false;
         
         // Event handler for input changes
-        const inputHandler = (e) => {
+        const inputHandler: EventListener = event => {
+            const e = event as Event & { originalEvent?: { propertyName?: string } };
+            const target = e.target as HTMLInputElement;
             if (isSliding && (e.type === 'input' || (e.type === 'propertychange' && e.originalEvent?.propertyName === 'value'))) {
-                const value = parseInt(e.target.value);
+                const value = parseInt(target.value);
                 const newScale = CropperSlider._fromSliderValueToScale(value);
                 cropModel.updateScale(newScale);
                 onChanged("slide");
                 
                 const adjustedValue = CropperSlider._fromScaleToSliderValue(cropModel.getScale());
                 if (Math.abs(adjustedValue - value) > 0.5) {
-                    e.target.value = Math.round(adjustedValue);
+                    target.value = String(Math.round(adjustedValue));
                 }
             }
         };
@@ -64,21 +69,22 @@ export class CropperSlider extends CropperComponent {
         };
         
         // Event handler for keyboard navigation
-        const keyHandler = (e) => {
+        const keyHandler: EventListener = event => {
+            const e = event as KeyboardEvent;
             if (e.keyCode === 37 || e.keyCode === 39) { // Left/Right arrow keys
                 movingClassManager.addMovingClass('slide');
             }
         };
         
         // Use native addEventListener instead of jQuery .on()
-        this.sliderInput.addEventListener('input', inputHandler);
-        this.sliderInput.addEventListener('propertychange', inputHandler);
-        this.sliderInput.addEventListener('mousedown', startHandler);
-        this.sliderInput.addEventListener('touchstart', startHandler);
-        this.sliderInput.addEventListener('mouseup', endHandler);
-        this.sliderInput.addEventListener('touchend', endHandler);
-        this.sliderInput.addEventListener('keyup', endHandler);
-        this.sliderInput.addEventListener('keydown', keyHandler);
+        this.sliderInput!.addEventListener('input', inputHandler);
+        this.sliderInput!.addEventListener('propertychange', inputHandler);
+        this.sliderInput!.addEventListener('mousedown', startHandler);
+        this.sliderInput!.addEventListener('touchstart', startHandler);
+        this.sliderInput!.addEventListener('mouseup', endHandler);
+        this.sliderInput!.addEventListener('touchend', endHandler);
+        this.sliderInput!.addEventListener('keyup', endHandler);
+        this.sliderInput!.addEventListener('keydown', keyHandler);
         
         // Store handlers for cleanup
         this._eventHandlers.set('input', inputHandler);
@@ -91,17 +97,17 @@ export class CropperSlider extends CropperComponent {
         this._eventHandlers.set('keydown', keyHandler);
     }
     
-    updateFromScale(scale) {
+    updateFromScale(scale: number) {
         if (this.sliderInput) {
             // Use native value property instead of jQuery .val()
-            this.sliderInput.value = Math.round(CropperSlider._fromScaleToSliderValue(scale));
+            this.sliderInput!.value = String(Math.round(CropperSlider._fromScaleToSliderValue(scale)));
         }
     }
     
-    updateMinScale(minScale) {
+    updateMinScale(minScale: number) {
         if (this.sliderInput) {
             // Use native setAttribute instead of jQuery .attr()
-            this.sliderInput.setAttribute('min', Math.floor(CropperSlider._fromScaleToSliderValue(minScale)));
+            this.sliderInput!.setAttribute('min', String(Math.floor(CropperSlider._fromScaleToSliderValue(minScale))));
         }
     }
     
@@ -109,7 +115,7 @@ export class CropperSlider extends CropperComponent {
         // Component-specific cleanup first
         if (this.element) {
             // Use native innerHTML instead of jQuery .empty()
-            this.element.innerHTML = '';
+            this.element!.innerHTML = '';
         }
         
         this.sliderInput = null;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mosaicoCropper } from '../src/js/MosaicoCropper.js';
+import { mosaicoCropper } from '../src/js/MosaicoCropper.ts';
 import { 
     setupImagePreloaderMock,
     createTestContainer,
@@ -8,9 +8,9 @@ import {
 } from './utils/testHelpers.js';
 
 // Mock all dependencies
-vi.mock('../src/js/utils/ImagePreloader.js');
+vi.mock('../src/js/utils/ImagePreloader.ts');
 
-import { ImagePreloader } from '../src/js/utils/ImagePreloader.js';
+import { ImagePreloader } from '../src/js/utils/ImagePreloader.ts';
 
 describe('Editable Feature', () => {
     let testImage;

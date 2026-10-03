@@ -1,8 +1,10 @@
+import tseslint from 'typescript-eslint';
 import globals from "globals";
 import js from "@eslint/js";
 
 export default [
   js.configs.recommended,
+  { files: ["**/*.ts"], languageOptions: { parser: tseslint.parser }, rules: { "no-undef": "off" } },
   {
     rules: {
         "no-empty": "off",

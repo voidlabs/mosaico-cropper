@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MovingClassManager } from '../src/js/utils/MovingClassManager.js';
+import { MovingClassManager } from '../src/js/utils/MovingClassManager.ts';
 import { createMockElement } from './utils/testHelpers.js';
 
 describe('MovingClassManager', () => {

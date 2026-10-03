@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mosaicoCropper } from '../src/js/MosaicoCropper.js';
+import { mosaicoCropper } from '../src/js/MosaicoCropper.ts';
 import { 
     createMockElement, 
     createMockCropModel, 
@@ -9,19 +9,19 @@ import {
 } from './utils/testHelpers.js';
 
 // Mock all dependencies
-vi.mock('../src/js/utils/UrlHandler.js');
-vi.mock('../src/js/CropModel.js');
-vi.mock('../src/js/utils/ImagePreloader.js');
-vi.mock('../src/js/utils/MovingClassManager.js');
-vi.mock('../src/js/components/CropperSlider.js');
-vi.mock('../src/js/components/CropperDraggable.js');
-vi.mock('../src/js/components/CropperResizer.js');
-vi.mock('../src/js/templates/CropperTemplate.js');
+vi.mock('../src/js/utils/UrlHandler.ts');
+vi.mock('../src/js/CropModel.ts');
+vi.mock('../src/js/utils/ImagePreloader.ts');
+vi.mock('../src/js/utils/MovingClassManager.ts');
+vi.mock('../src/js/components/CropperSlider.ts');
+vi.mock('../src/js/components/CropperDraggable.ts');
+vi.mock('../src/js/components/CropperResizer.ts');
+vi.mock('../src/js/templates/CropperTemplate.ts');
 
-import { urlAdapterFromSrc, urlAdapterToSrc } from '../src/js/utils/UrlHandler.js';
-import { CropModel } from '../src/js/CropModel.js';
-import { ImagePreloader } from '../src/js/utils/ImagePreloader.js';
-import { createElementFromTemplate } from '../src/js/templates/CropperTemplate.js';
+import { urlAdapterFromSrc, urlAdapterToSrc } from '../src/js/utils/UrlHandler.ts';
+import { CropModel } from '../src/js/CropModel.ts';
+import { ImagePreloader } from '../src/js/utils/ImagePreloader.ts';
+import { createElementFromTemplate } from '../src/js/templates/CropperTemplate.ts';
 
 describe('MosaicoCropper Core Logic', () => {
     let imgEl, widget, cropModelInstance;

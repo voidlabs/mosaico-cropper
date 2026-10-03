@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { urlAdapterFromSrc, urlAdapterToSrc } from '../src/js/utils/UrlHandler.js';
+import { urlAdapterFromSrc, urlAdapterToSrc } from '../src/js/utils/UrlHandler.ts';
 import { createMockUrlAdapter } from './utils/testHelpers.js';
 
 describe('url-adapters', () => {

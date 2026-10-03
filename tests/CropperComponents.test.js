@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { CropperSlider } from '../src/js/components/CropperSlider.js';
-import { CropperDraggable } from '../src/js/components/CropperDraggable.js';
-import { CropperResizer } from '../src/js/components/CropperResizer.js';
+import { CropperSlider } from '../src/js/components/CropperSlider.ts';
+import { CropperDraggable } from '../src/js/components/CropperDraggable.ts';
+import { CropperResizer } from '../src/js/components/CropperResizer.ts';
 import { 
     createMockCropModel, 
     createMockMovingClassManager, 

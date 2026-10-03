@@ -37,8 +37,8 @@ export const CROPPER_TEMPLATE = `
  * @param {string} template - HTML template string
  * @returns {HTMLElement} - Created element
  */
-export function createElementFromTemplate(template) {
+export function createElementFromTemplate(template: string): HTMLElement {
     const templateElement = document.createElement('template');
     templateElement.innerHTML = template.trim();
-    return templateElement.content.firstChild;
+    return templateElement.content.firstElementChild as HTMLElement;
 }

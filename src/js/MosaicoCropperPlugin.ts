@@ -1,3 +1,4 @@
+import type { CropperOptions, CropperInstance, CropperEventMap, CropperEvent, CropperCallback, JQueryLike, JQueryCollectionLike } from '../types.js';
 /**
  * MosaicoCropperPlugin - Native plugin system to replace jQuery UI Widget
  * 
@@ -13,10 +14,14 @@ import { elementDataStore } from './utils/MinimalDomUtils.js';
  * Replaces jQuery UI Widget Factory pattern with modern ES6 class
  */
 export class MosaicoCropperPlugin {
-    constructor(element, options = {}) {
+    element: HTMLImageElement | null;
+    options: CropperOptions | null;
+    instance: CropperInstance | null;
+    isInitialized: boolean;
+    constructor(element: HTMLImageElement | string, options: CropperOptions = {}) {
         // Ensure we have a native HTMLElement
         if (typeof element === 'string') {
-            element = document.querySelector(element);
+            element = document.querySelector<HTMLImageElement>(element)!;
         }
         
         if (!(element instanceof HTMLElement)) {
@@ -49,7 +54,7 @@ export class MosaicoCropperPlugin {
         }
         
         // Create cropper instance without jQuery dependency
-        this.instance = mosaicoCropper(this.element, this.options, this);
+        this.instance = mosaicoCropper(this.element!, this.options!, this);
         this.isInitialized = true;
     }
     
@@ -58,7 +63,9 @@ export class MosaicoCropperPlugin {
      * @param {number} [value] - Scale value to set
      * @returns {number|MosaicoCropperPlugin} Current scale or this for chaining
      */
-    scale(value) {
+    scale(): number;
+    scale(value: number): this;
+    scale(value?: number): number | this {
         if (!this.instance) return value === undefined ? 1 : this;
         
         if (value === undefined) {
@@ -85,7 +92,9 @@ export class MosaicoCropperPlugin {
      * @param {number} [value] - Height value to set
      * @returns {number|MosaicoCropperPlugin} Current height or this for chaining
      */
-    cropHeight(value) {
+    cropHeight(): number;
+    cropHeight(value: number): this;
+    cropHeight(value?: number): number | this {
         if (!this.instance) return value === undefined ? 0 : this;
         
         if (value === undefined) {
@@ -109,13 +118,13 @@ export class MosaicoCropperPlugin {
      * @param {Object} newOptions - New options to merge
      * @returns {MosaicoCropperPlugin} This for chaining
      */
-    updateOptions(newOptions) {
-        const hasChanged = Object.keys(newOptions).some(key => 
-            this.options[key] !== newOptions[key]
+    updateOptions(newOptions: CropperOptions) {
+        const hasChanged = (Object.keys(newOptions) as Array<keyof CropperOptions>).some(key => 
+            this.options![key] !== newOptions[key]
         );
         
         if (hasChanged) {
-            Object.assign(this.options, newOptions);
+            Object.assign(this.options!, newOptions);
             this._init(); // Reinitialize with new options
         }
         
@@ -163,7 +172,7 @@ export class MosaicoCropperPlugin {
         }
         
         // Remove from element data storage
-        elementDataStore.remove(this.element, 'mosaicoCropperPlugin');
+        elementDataStore.remove(this.element!, 'mosaicoCropperPlugin');
         
         this.isInitialized = false;
         this.element = null;
@@ -179,7 +188,7 @@ export class MosaicoCropperPlugin {
      * @param {*} [data] - Event data
      * @returns {boolean} True if event was not cancelled
      */
-    _trigger(eventType, originalEvent = null, data = null) {
+    _trigger<K extends keyof CropperEventMap>(eventType: K, originalEvent: Event | null = null, data: CropperEventMap[K] = null as CropperEventMap[K]) {
         // Create event name following jQuery UI convention
         const eventName = 'mosaicocropper' + eventType;
         
@@ -206,13 +215,14 @@ export class MosaicoCropperPlugin {
         }
         
         // Dispatch on element
-        const result = this.element.dispatchEvent(customEvent);
+        const result = this.element!.dispatchEvent(customEvent);
         
         // Also try to call callback function if provided in options
-        const callbackName = 'on' + eventType.charAt(0).toUpperCase() + eventType.slice(1);
-        if (this.options && typeof this.options[callbackName] === 'function') {
+        const callbackName = ('on' + eventType.charAt(0).toUpperCase() + eventType.slice(1)) as keyof CropperOptions;
+        const callback = this.options?.[callbackName] as CropperCallback<CropperEventMap[K]> | undefined;
+        if (typeof callback === 'function' && this.element) {
             try {
-                this.options[callbackName].call(this.element, customEvent, data);
+                callback.call(this.element, customEvent as CropperEvent<CropperEventMap[K]>, data);
             } catch (error) {
                 console.error('Error in cropper callback:', error);
             }
@@ -230,8 +240,8 @@ export class MosaicoCropperPlugin {
  * @param {Object} [options] - Configuration options
  * @returns {MosaicoCropperPlugin} New plugin instance
  */
-export function createMosaicoCropper(element, options = {}) {
-    return new MosaicoCropperPlugin(element, options);
+export function createMosaicoCropper(element: HTMLImageElement | string, options: CropperOptions = {}) {
+    return new MosaicoCropperPlugin(element as HTMLImageElement, options);
 }
 
 /**
@@ -239,8 +249,8 @@ export function createMosaicoCropper(element, options = {}) {
  * @param {HTMLElement} element - Target element
  * @returns {MosaicoCropperPlugin|null} Existing instance or null
  */
-export function getMosaicoCropper(element) {
-    return elementDataStore.get(element, 'mosaicoCropperPlugin') || null;
+export function getMosaicoCropper(element: HTMLElement) {
+    return elementDataStore.get<MosaicoCropperPlugin>(element, 'mosaicoCropperPlugin') || null;
 }
 
 /**
@@ -250,15 +260,14 @@ export function getMosaicoCropper(element) {
  * 
  * @param {Object} jQueryInstance - jQuery object
  */
-export function registerJQueryPlugin(jQueryInstance) {
+export function registerJQueryPlugin(jQueryInstance: JQueryLike) {
     if (!jQueryInstance || typeof jQueryInstance.fn !== 'object') {
         console.warn('Invalid jQuery instance provided to registerJQueryPlugin');
         return;
     }
     
-    jQueryInstance.fn.mosaicoCropper = function(options) {
-        const args = Array.prototype.slice.call(arguments, 1);
-        let result = this;
+    jQueryInstance.fn.mosaicoCropper = function(options, ...args: unknown[]) {
+        let result: unknown = this;
         
         this.each(function() {
             const element = this;
@@ -271,8 +280,9 @@ export function registerJQueryPlugin(jQueryInstance) {
                     return;
                 }
                 
-                if (typeof instance[options] === 'function') {
-                    const methodResult = instance[options].apply(instance, args);
+                const method = (instance as unknown as Record<string, unknown>)[options];
+                if (typeof method === 'function') {
+                    const methodResult = method.apply(instance, args);
                     
                     // If method returns a value (not chainable), store it as result
                     if (methodResult !== instance && methodResult !== undefined) {
@@ -286,10 +296,10 @@ export function registerJQueryPlugin(jQueryInstance) {
                 // Initialization: $('#el').mosaicoCropper({...})
                 if (instance) {
                     // Update existing instance
-                    instance.updateOptions(options);
+                    instance.updateOptions(options || {});
                 } else {
                     // Create new instance
-                    new MosaicoCropperPlugin(element, options);
+                    new MosaicoCropperPlugin(element as HTMLImageElement, options);
                 }
             }
         });
@@ -299,13 +309,13 @@ export function registerJQueryPlugin(jQueryInstance) {
     
     // Add data method for retrieving instances (jQuery UI pattern)
     const originalData = jQueryInstance.fn.data;
-    jQueryInstance.fn.data = function(key, value) {
+    jQueryInstance.fn.data = function(this: JQueryCollectionLike, key: unknown, value?: unknown) {
         if (key === 'mosaicoCropper' && value === undefined) {
             // Get mosaicoCropper instance
             return getMosaicoCropper(this[0]);
         }
         // Call original data method
-        return originalData.apply(this, arguments);
+        return originalData.call(this, key, value);
     };
 }
 
@@ -323,12 +333,12 @@ if (typeof window !== 'undefined' && window.jQuery) {
  */
 export function autoRegisterJQuery() {
     // Try common jQuery global names
-    const jQueryGlobals = ['jQuery', '$', 'jquery'];
+    const jQueryGlobals = ['jQuery', '$', 'jquery'] as const;
     
     for (const globalName of jQueryGlobals) {
         if (typeof window !== 'undefined' && window[globalName] && window[globalName].fn) {
             try {
-                registerJQueryPlugin(window[globalName]);
+                registerJQueryPlugin(window[globalName]!);
                 console.log(`MosaicoCropper registered with ${globalName}`);
             } catch (error) {
                 console.warn(`Failed to register MosaicoCropper with ${globalName}:`, error);

@@ -1,3 +1,6 @@
+import type { CropModel } from '../CropModel.js';
+import type { MovingClassManager } from '../utils/MovingClassManager.js';
+import type { CropperWidget, CropMethod } from '../../types.js';
 import { CropperComponent } from './CropperComponent.js';
 
 /**
@@ -5,17 +8,20 @@ import { CropperComponent } from './CropperComponent.js';
  * Refactored per utilizzare JavaScript nativo invece di jQuery
  */
 export class CropperResizer extends CropperComponent {
-    constructor(cropperFrameEl) {
+    cropperFrameEl: HTMLElement;
+    rootEl: HTMLElement | null;
+    widget: CropperWidget | null;
+    constructor(cropperFrameEl: HTMLElement) {
         super(cropperFrameEl, 'CropperResizer');
         
         // Store the frame element reference (same as this.element but named for clarity)
-        this.cropperFrameEl = this.element;
+        this.cropperFrameEl = this.element!;
         this.handleElement = null;
         this.rootEl = null;
         this.widget = null;
     }
     
-    initialize(cropModel, rootEl, movingClassManager, onChanged, widget = null) {
+    initialize(cropModel: CropModel, rootEl: HTMLElement, movingClassManager: MovingClassManager, onChanged: (reason?: string) => void, widget: CropperWidget | null = null) {
         super.initializeBase(cropModel, movingClassManager, onChanged);
         this.rootEl = this.toNativeElement(rootEl);
         this.widget = widget;
@@ -26,10 +32,10 @@ export class CropperResizer extends CropperComponent {
         this.cropperFrameEl.appendChild(this.handleElement);
         
         let isResizing = false;
-        let startY, startHeight, originalHeight, originalOuterTop, originalMethod, maxHeight;
+        let startY: number, startHeight: number, originalHeight: number, originalOuterTop: number, originalMethod: CropMethod, maxHeight: number;
         
         // Event handler for resize start
-        const resizeStartHandler = (event) => {
+        const resizeStartHandler = (event: Event) => {
             event.preventDefault();
             event.stopPropagation();
             
@@ -38,7 +44,7 @@ export class CropperResizer extends CropperComponent {
             startHeight = this.cropperFrameEl.offsetHeight;
             originalHeight = startHeight;
             
-            this.rootEl.focus();
+            this.rootEl!.focus();
             movingClassManager.addMovingClass('handle');
             originalOuterTop = cropModel.getContainerTop();
             originalMethod = cropModel.getCurrentComputedMethod();
@@ -46,7 +52,7 @@ export class CropperResizer extends CropperComponent {
         };
         
         // Event handler for resize move
-        const resizeMoveHandler = (moveEvent) => {
+        const resizeMoveHandler = (moveEvent: Event) => {
             if (!isResizing) return;
             
             const currentY = this.getEventCoords(moveEvent).y;
@@ -68,7 +74,7 @@ export class CropperResizer extends CropperComponent {
         };
         
         // Event handler for resize end
-        const resizeEndHandler = (upEvent) => {
+        const resizeEndHandler = (upEvent: Event) => {
             if (!isResizing) return;
             isResizing = false;
             
@@ -84,7 +90,7 @@ export class CropperResizer extends CropperComponent {
         };
         
         // Combined start handler that sets up document listeners
-        const startHandler = (event) => {
+        const startHandler = (event: Event) => {
             resizeStartHandler(event);
             
             // Add document event listeners for move and end

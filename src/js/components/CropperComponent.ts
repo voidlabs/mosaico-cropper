@@ -1,9 +1,21 @@
+import type { CropModel } from '../CropModel.js';
+import type { MovingClassManager } from '../utils/MovingClassManager.js';
 /**
  * CropperComponent - Base class for all cropper components
  * Extracts common patterns from CropperDraggable, CropperResizer, CropperSlider
  */
 export class CropperComponent {
-    constructor(element, componentName = 'CropperComponent') {
+    componentName: string;
+    element: HTMLElement | null;
+    cropModel: CropModel | null;
+    movingClassManager: MovingClassManager | null;
+    onChanged: ((reason?: string) => void) | null;
+    sliderInput: HTMLInputElement | null = null;
+    handleElement: HTMLElement | null = null;
+    _eventHandlers: Map<string, EventListener>;
+    _documentHandlers: Map<string, EventListener>;
+    private trackedHandlers: Array<{ target: EventTarget; type: string; handler: EventListener }> = [];
+    constructor(element: HTMLElement, componentName = 'CropperComponent') {
         this.componentName = componentName;
         this.element = null;
         
@@ -24,7 +36,7 @@ export class CropperComponent {
      * Common element wrapper initialization logic
      * @private
      */
-    _initializeElement(element) {
+    _initializeElement(element: HTMLElement) {
         if (element instanceof HTMLElement) {
             this.element = element;
         } else {
@@ -38,7 +50,7 @@ export class CropperComponent {
      * @param {Object} movingClassManager - The moving class manager instance
      * @param {Function} onChanged - Change callback function
      */
-    initializeBase(cropModel, movingClassManager, onChanged) {
+    initializeBase(cropModel: CropModel, movingClassManager: MovingClassManager, onChanged: (reason?: string) => void) {
         this.cropModel = cropModel;
         this.movingClassManager = movingClassManager;
         this.onChanged = onChanged;
@@ -49,7 +61,8 @@ export class CropperComponent {
      * @param {Event} event - DOM event
      * @returns {Object} Coordinates object with x, y properties
      */
-    getEventCoords(event) {
+    getEventCoords(input: Event) {
+        const event = input as Event & Partial<MouseEvent & TouchEvent> & { originalEvent?: Partial<MouseEvent & TouchEvent> };
         if (event.type?.indexOf('touch') === 0) {
             const touch = event.originalEvent?.touches?.[0] || event.touches?.[0];
             return touch ? { x: touch.clientX, y: touch.clientY } : { x: 0, y: 0 };
@@ -67,18 +80,19 @@ export class CropperComponent {
      * @param {Function} handler - Event handler
      * @param {boolean} useDocument - Whether to add to document (for global events)
      */
-    addEventHandler(element, eventType, handler, useDocument = false) {
+    addEventHandler(element: HTMLElement, eventType: string, handler: EventListener, useDocument = false) {
         const targetElement = useDocument ? document : element;
-        const handlerMap = useDocument ? this._documentHandlers : this._eventHandlers;
         
         targetElement.addEventListener(eventType, handler);
-        handlerMap.set(`${eventType}_${element.tagName}_${Date.now()}`, { element: targetElement, eventType, handler });
+        this.trackedHandlers.push({ target: targetElement, type: eventType, handler });
     }
     
     /**
      * Common destroy method - cleanup all event listeners
      */
     destroy() {
+        for (const { target, type, handler } of this.trackedHandlers) target.removeEventListener(type, handler);
+        this.trackedHandlers = [];
         // Handle the existing event handler pattern used by components
         // Remove element event handlers
         if (this.element && this._eventHandlers.size > 0) {
@@ -119,7 +133,7 @@ export class CropperComponent {
      * @param {HTMLElement|Object} elementOrWrapper - Element or wrapper
      * @returns {HTMLElement} Native HTMLElement
      */
-    toNativeElement(elementOrWrapper) {
+    toNativeElement(elementOrWrapper: HTMLElement) {
         return elementOrWrapper;
     }
 }

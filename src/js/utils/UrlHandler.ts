@@ -1,7 +1,8 @@
+import type { CropperOptions, CropResult, CropMethod, UrlAdapter, ParsedUrl } from '../../types.js';
 // src/js/url-adapters.js
 
 // Definizione delle dipendenze
-const _urlParserPatterns = {
+const _urlParserPatterns: Record<string, string> = {
     encodedUrlOriginal: '[^ &\\?]+',
     width: '[0-9]+',
     height: '[0-9]+',
@@ -17,11 +18,11 @@ const _urlParserPatterns = {
     cropY2: '[0-9]+',
 };
 
-const methods = [ 'original', 'resize', 'cover', 'cropresize', 'resizecrop' ];
+const methods: CropMethod[] = [ 'original', 'resize', 'cover', 'cropresize', 'resizecrop' ];
 
-function _urlParser(pattern, customPatterns, url) {
-    const matchNames = [];
-    const regex = new RegExp('^'+pattern.replace(/\\.|(\((?!\?[!:=]))|\{([^:\}]+)(?::([^\}]+))?\}/g, function(match, braket, groupName, subPattern, offset, input_string) {
+function _urlParser(pattern: string, customPatterns: Record<string, string> | undefined, url: string): ParsedUrl | null {
+    const matchNames: string[] = [];
+    const regex = new RegExp('^'+pattern.replace(/\\.|(\((?!\?[!:=]))|\{([^:\}]+)(?::([^\}]+))?\}/g, function(match: string, braket: string, groupName: string, subPattern: string) {
         // console.log("X", match, braket, groupName, subPattern, offset, input_string);
         if (braket) {
             // existing regex match
@@ -57,7 +58,7 @@ function _urlParser(pattern, customPatterns, url) {
 
     const res = url.match(regex);
 
-    let matches = null;
+    let matches: ParsedUrl | null = null;
     if (res !== null) {
         if (res.length !== matchNames.length + 1) {
             // TODO improve error reporting
@@ -74,11 +75,12 @@ function _urlParser(pattern, customPatterns, url) {
     return matches;
 }
 
-function _stringTemplate(string, obj) {
+function _stringTemplate(string: string, obj: CropResult) {
     // if a token is in the {token:something} format, then ":something" is completely ignored
     return string.replace(/\{([^[\}:]+)(?::[^\}]+)?\}/g, function(match, contents, offset, input_string) {
-        if (obj.hasOwnProperty(contents)) {
-            return obj[contents] !== undefined ? obj[contents] : '';
+        if (Object.prototype.hasOwnProperty.call(obj, contents)) {
+            const value = obj[contents as keyof CropResult];
+            return value !== undefined ? String(value) : '';
         } else {
             return match;
         }
@@ -86,21 +88,24 @@ function _stringTemplate(string, obj) {
 }
 
 export class UrlHandler {
-    constructor(options) {
+    options: UrlAdapter;
+    constructor(options: UrlAdapter) {
         if (!options || typeof options !== 'object') {
             throw new Error('UrlHandler requires a valid options object');
         }
         this.options = options;
     }
 
-    decodeSrc(urlData, src) {
+    decodeSrc(urlData: CropperOptions, src: string) {
         let fromSrc = this.options.fromSrc;
         if (typeof fromSrc == 'object') {
             const toSrc = this.options.toSrc;
+            if (typeof toSrc !== 'object') throw new Error('Pattern maps require method-specific URL templates');
             const patterns = [];
-            for (const p in toSrc) if (toSrc.hasOwnProperty(p)) {
+            for (const p in toSrc) if (Object.prototype.hasOwnProperty.call(toSrc, p)) {
                 // escaping regexp special chars, excluding {} that we use for tokens.
-                patterns.push(toSrc[p].replace(/[.*+?^$()|[\]\\]/g, '\\$&'));
+                const template = (toSrc as Partial<Record<CropMethod, string>>)[p as CropMethod]!;
+                patterns.push(template.replace(/[.*+?^$()|[\]\\]/g, '\\$&'));
             }
             const composedPattern = "("+patterns.join("|")+")";
             const origFromSrc = fromSrc;
@@ -141,20 +146,20 @@ export class UrlHandler {
         return urlAdapterResult;
     }
 
-    encodeSrc(urlData, res) {
+    encodeSrc(urlData: CropperOptions, res: CropResult) {
         // TODO TEMP
         // console.log("computedSize", res.method, res._scale, res);
 
         res.urlPrefix = urlData.urlPrefix;
         res.urlPostfix = urlData.urlPostfix;
         res.urlOriginal = urlData.urlOriginal;
-        res.encodedUrlOriginal = encodeURIComponent(urlData.urlOriginal);
+        res.encodedUrlOriginal = encodeURIComponent(urlData.urlOriginal!);
 
         let toSrc = this.options.toSrc;
         if (typeof toSrc == 'object') {
             for (let i = methods.indexOf(res.method); i < methods.length; i++) {
                 if (typeof toSrc[methods[i]] !== 'undefined') {
-                    toSrc = toSrc[methods[i]];
+                    toSrc = toSrc[methods[i]]!;
                     // console.log("Using method "+methods[i]+" for original method "+res.method+":", toSrc);
                     break;
                 }
@@ -164,17 +169,18 @@ export class UrlHandler {
             toSrc = _stringTemplate.bind(undefined, toSrc);
             // console.log("Mapping method string to function", toSrc);
         }
+        if (typeof toSrc !== 'function') throw new Error('No URL template for ' + res.method);
         return toSrc(res);
     }
 }
 
 // Backward compatibility exports
-export function urlAdapterFromSrc(urlAdapter, urlData, src) {
+export function urlAdapterFromSrc(urlAdapter: UrlAdapter, urlData: CropperOptions, src: string) {
     const handler = new UrlHandler(urlAdapter);
     return handler.decodeSrc(urlData, src);
 }
 
-export function urlAdapterToSrc(urlAdapter, urlData, res) {
+export function urlAdapterToSrc(urlAdapter: UrlAdapter, urlData: CropperOptions, res: CropResult) {
     const handler = new UrlHandler(urlAdapter);
     return handler.encodeSrc(urlData, res);
 }

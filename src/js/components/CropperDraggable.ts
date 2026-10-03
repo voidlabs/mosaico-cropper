@@ -1,3 +1,6 @@
+import type { CropModel } from '../CropModel.js';
+import type { MovingClassManager } from '../utils/MovingClassManager.js';
+import type { CropperWidget, CropMethod } from '../../types.js';
 import { CropperComponent } from './CropperComponent.js';
 
 /**
@@ -5,7 +8,10 @@ import { CropperComponent } from './CropperComponent.js';
  * Refactored per utilizzare JavaScript nativo invece di jQuery
  */
 export class CropperDraggable extends CropperComponent {
-    constructor(element, options = {}) {
+    shiftWheel: boolean;
+    rootEl: HTMLElement | null;
+    hasDragged: boolean;
+    constructor(element: HTMLElement, options: { shiftWheel?: boolean } = {}) {
         super(element, 'CropperDraggable');
         
         this.shiftWheel = options.shiftWheel || false;
@@ -13,15 +19,15 @@ export class CropperDraggable extends CropperComponent {
         this.hasDragged = false;
     }
     
-    initialize(cropModel, rootEl, movingClassManager, onChanged) {
+    initialize(cropModel: CropModel, rootEl: HTMLElement, movingClassManager: MovingClassManager, onChanged: (reason?: string) => void) {
         super.initializeBase(cropModel, movingClassManager, onChanged);
         this.rootEl = this.toNativeElement(rootEl);
         
         let isDragging = false;
-        let startCoords, startLeft, startTop;
+        let startCoords: { x: number; y: number }, startLeft: number, startTop: number;
         
         // Event handler for drag start
-        const dragStartHandler = (event) => {
+        const dragStartHandler = (event: Event) => {
             event.preventDefault();
             isDragging = true;
             
@@ -29,12 +35,12 @@ export class CropperDraggable extends CropperComponent {
             startLeft = cropModel.getContainerLeft();
             startTop = cropModel.getContainerTop();
             
-            this.rootEl.focus();
+            this.rootEl!.focus();
             movingClassManager.addMovingClass('drag');
         };
         
         // Event handler for drag move
-        const dragMoveHandler = (moveEvent) => {
+        const dragMoveHandler = (moveEvent: Event) => {
             if (!isDragging) return;
             
             const moveCoords = this.getEventCoords(moveEvent);
@@ -51,7 +57,7 @@ export class CropperDraggable extends CropperComponent {
         };
         
         // Event handler for drag end
-        const dragEndHandler = (upEvent) => {
+        const dragEndHandler = (upEvent: Event) => {
             if (!isDragging) return;
             isDragging = false;
             
@@ -71,7 +77,7 @@ export class CropperDraggable extends CropperComponent {
         };
         
         // Combined start handler that sets up document listeners
-        const startHandler = (event) => {
+        const startHandler = (event: Event) => {
             dragStartHandler(event);
             
             // Add document event listeners for move and end
@@ -82,8 +88,8 @@ export class CropperDraggable extends CropperComponent {
         };
         
         // Use native addEventListener instead of jQuery .on()
-        this.element.addEventListener('mousedown', startHandler);
-        this.element.addEventListener('touchstart', startHandler);
+        this.element!.addEventListener('mousedown', startHandler);
+        this.element!.addEventListener('touchstart', startHandler);
         
         // Store handlers for cleanup
         this._eventHandlers.set('mousedown', startHandler);
@@ -94,11 +100,12 @@ export class CropperDraggable extends CropperComponent {
         this._documentHandlers.set('touchend', dragEndHandler);
         
         // Event handler for wheel zoom
-        const wheelHandler = (event) => {
+        const wheelHandler: EventListener = input => {
+            const event = input as WheelEvent;
             if (this.shiftWheel && !event.shiftKey) return true;
             
             const delta = -event.deltaY || 0;
-            this.rootEl.focus();
+            this.rootEl!.focus();
             
             if (delta !== 0) {
                 movingClassManager.addMovingClass('wheel');
@@ -126,14 +133,14 @@ export class CropperDraggable extends CropperComponent {
         // Event handler for click toggle
         const clickHandler = () => {
             if (this.hasDragged) return;
-            this.rootEl.focus();
+            this.rootEl!.focus();
             movingClassManager.toggleMovingClass('click');
         };
         
         // Add remaining event listeners
-        this.element.addEventListener('wheel', wheelHandler);
-        this.element.addEventListener('dblclick', dblClickHandler);
-        this.element.addEventListener('click', clickHandler);
+        this.element!.addEventListener('wheel', wheelHandler);
+        this.element!.addEventListener('dblclick', dblClickHandler);
+        this.element!.addEventListener('click', clickHandler);
         
         // Store additional handlers for cleanup
         this._eventHandlers.set('wheel', wheelHandler);

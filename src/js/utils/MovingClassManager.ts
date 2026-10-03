@@ -4,7 +4,11 @@
  */
 export class MovingClassManager {
     
-    constructor(element) {
+    element: HTMLElement | null;
+    isMoving: boolean;
+    currentMovingClass: string | null;
+    movingTimeout: ReturnType<typeof setTimeout> | null;
+    constructor(element: HTMLElement) {
         // Accept HTMLElement
         if (element instanceof HTMLElement) {
             this.element = element;
@@ -21,7 +25,7 @@ export class MovingClassManager {
      * Aggiunge classe di movimento se non già in movimento
      * @param {string} className - Nome della classe (es. 'drag', 'slide', 'wheel')
      */
-    addMovingClass(className) {
+    addMovingClass(className: string) {
         if (typeof className !== 'string' || !className) {
             throw new Error('addMovingClass requires a valid className string');
         }
@@ -30,8 +34,8 @@ export class MovingClassManager {
         
         if (!this.isMoving) {
             // Use native classList instead of jQuery addClass
-            this.element.classList.add("cropper-moving");
-            this.element.classList.add("cropper-moving-" + className);
+            this.element!.classList.add("cropper-moving");
+            this.element!.classList.add("cropper-moving-" + className);
             this.isMoving = true;
             this.currentMovingClass = className;
         }
@@ -45,8 +49,8 @@ export class MovingClassManager {
         
         if (this.isMoving && this.currentMovingClass) {
             // Use native classList instead of jQuery removeClass
-            this.element.classList.remove("cropper-moving");
-            this.element.classList.remove("cropper-moving-" + this.currentMovingClass);
+            this.element!.classList.remove("cropper-moving");
+            this.element!.classList.remove("cropper-moving-" + this.currentMovingClass);
             this.isMoving = false;
             this.currentMovingClass = null;
         }
@@ -56,7 +60,7 @@ export class MovingClassManager {
      * Toggle delle classi di movimento
      * @param {string} className - Nome della classe
      */
-    toggleMovingClass(className) {
+    toggleMovingClass(className: string) {
         if (this.isMoving) {
             this.removeMovingClass();
         } else {

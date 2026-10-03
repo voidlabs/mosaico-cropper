@@ -11,7 +11,7 @@ export class ImagePreloader {
      * @param {function} onError - Callback(src, error) all'errore
      * @returns {HTMLImageElement} - Elemento image per eventuali operazioni
      */
-    static preload(src, onSuccess, onError) {
+    static preload(src: string, onSuccess?: (img: HTMLImageElement, src: string) => void, onError?: (src: string, error: Event | string) => void) {
         if (typeof src !== 'string' || !src) {
             throw new Error('ImagePreloader requires a valid src string');
         }
@@ -40,9 +40,9 @@ export class ImagePreloader {
      * @param {string[]} sources - Array di URL immagini
      * @returns {Promise<HTMLImageElement[]>} - Promise con array di immagini caricate
      */
-    static preloadMultiple(sources) {
+    static preloadMultiple(sources: string[]) {
         const promises = sources.map(src => 
-            new Promise((resolve, reject) => {
+            new Promise<{ img: HTMLImageElement; src: string }>((resolve, reject) => {
                 ImagePreloader.preload(src, 
                     (img, src) => resolve({img, src}),
                     (src, error) => reject({src, error})
@@ -58,7 +58,7 @@ export class ImagePreloader {
      * @param {string} src - URL dell'immagine
      * @returns {boolean} - True se caricata
      */
-    static isImageLoaded(src) {
+    static isImageLoaded(src: string) {
         const img = new Image();
         img.src = src;
         return img.complete && img.naturalWidth !== 0;

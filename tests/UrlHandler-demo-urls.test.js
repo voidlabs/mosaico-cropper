@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { urlAdapterFromSrc, urlAdapterToSrc } from '../src/js/utils/UrlHandler.js';
+import { urlAdapterFromSrc, urlAdapterToSrc } from '../src/js/utils/UrlHandler.ts';
 
 // Import the urlAdapters file and make its globals available
 import '../urladapters.js';

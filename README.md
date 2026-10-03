@@ -96,6 +96,33 @@ If you prefer to use jQuery, the plugin automatically registers itself when jQue
 
 ## Configuration Options
 
+### TypeScript
+
+The library and demo sources are written in strict TypeScript. ESM, CommonJS and
+the UMD browser bundle remain available as JavaScript; the npm-compatible package
+also includes generated declarations, so no separate `@types` package is needed.
+
+```ts
+import { createMosaicoCropper, type CropperOptions, type ZoomState } from 'mosaico-cropper';
+
+const options: CropperOptions = {
+  toolbar: false,
+  autoClose: false,
+  onZoomchange(event, state) {
+    // Both state and event.detail.data are ZoomState.
+    console.log(state.scale, state.minScale, state.maxScale);
+  }
+};
+const cropper = createMosaicoCropper('#image', options);
+// After onCropperready:
+const zoom: ZoomState | null = cropper.getZoomState();
+```
+
+Public types include `CropperOptions`, `ZoomState`, `CropResult`, `UrlAdapter`,
+`CropperEvent` and `CropperEventMap`. The core accepts URL adapter objects; use the
+existing `urladapters.js` demo registry to resolve service names into objects.
+For development, run `npm run typecheck`, `npm test -- --run`, and `npm run build`.
+
 ### Core Options
 
 - **`toolbar`** (boolean, default: `true`): Set to `false` to omit the built-in Fit / zoom / Apply controls. Pan, wheel zoom, resize, edit triggers and programmatic controls remain available.
